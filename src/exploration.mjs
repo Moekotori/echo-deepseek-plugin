@@ -27,6 +27,8 @@ export class DeepSeekExploration {
         question: person.role, force }, { signal, onProgress });
       for (const work of related.works) {
         const identity = normalizeCacheText(work.title) + '\n' + normalizeCacheText(work.artist);
+        // Contributor catalogues often list the seed song itself; exploration shows other works.
+        if ([work.title, work.title + ' — ' + work.artist].some(value => normalizeCacheText(value) === normalizeCacheText(name))) continue;
         if (seen.has(identity) || works.length === 12) continue;
         const cited = cite(work, related.sources); if (!cited) continue;
         seen.add(identity); works.push({ ...cited, relation: person.name + ' · ' + work.relation });

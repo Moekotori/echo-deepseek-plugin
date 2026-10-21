@@ -17,7 +17,8 @@ function fixture() {
         posts.push(input); const request = JSON.parse(input.messages.at(-1).content);
         data = { choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ summary: 'Verified credits', items: [],
           people: request.kind === 'track' ? Array.from({ length: 5 }, (_, i) => ({ name: 'Composer' + i, role: '作曲', sourceIndex: 0 })) : [],
-          works: request.kind === 'contributor' ? [{ title: 'Other Song', artist: 'Artist', relation: '作曲', sourceIndex: 0 }] : [] }) } }] };
+          works: request.kind === 'contributor' ? [{ title: 'Song', artist: 'Artist', relation: '作曲', sourceIndex: 0 },
+            { title: 'Other Song', artist: 'Artist', relation: '作曲', sourceIndex: 0 }] : [] }) } }] };
       }
       return { ok: true, body: JSON.stringify(data) };
     } }, library: { getTracks: async () => ({ items: matches ? [{ id: 'private-id', title: 'Other Song', artist: 'Artist', album: 'Private album', path: '/private/song', unavailable: false }] : [] }) } };
@@ -29,6 +30,7 @@ test('exploration follows at most two evidenced contributors, deduplicates works
   const result = await client.lookup({ name: 'Song — Artist' }, { signal: new AbortController().signal });
   assert.equal(posts.length, 3); assert.equal(searches.length, 5); assert.equal(result.people.length, 2);
   assert.equal(result.works.length, 1); assert.equal(result.works[0].track.id, 'private-id');
+  assert.equal(result.works[0].title, 'Other Song');
   assert.match(result.works[0].relation, /Composer0/);
   assert.ok(result.sources.some(source => source.url.includes('bilibili.com/video/')));
   assert.ok(result.sources.some(source => source.url.includes('youtube.com/watch')));
