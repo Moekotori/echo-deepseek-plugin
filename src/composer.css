@@ -4,14 +4,14 @@
   gap: 14px;
   padding: 18px 20px 12px;
   border: 1px solid var(--fish-line);
-  border-radius: 24px;
+  border-radius: 20px;
   background: var(--echo-host-appBg);
-  box-shadow: 0 4px 18px color-mix(in srgb, var(--echo-host-text) 4%, transparent);
+  box-shadow: 0 12px 30px -18px color-mix(in srgb, var(--echo-host-text) 18%, transparent);
   transition: border-color .18s, box-shadow .18s;
 }
 .composer:focus-within {
   border-color: color-mix(in srgb, var(--echo-host-accent) 45%, var(--echo-host-border));
-  box-shadow: 0 5px 22px color-mix(in srgb, var(--echo-host-text) 7%, transparent);
+  box-shadow: 0 12px 30px -16px color-mix(in srgb, var(--echo-host-text) 20%, transparent);
 }
 .composer textarea {
   width: 100%;
@@ -28,7 +28,7 @@
   line-height: 1.75;
 }
 .composer textarea:focus-visible { outline: none; }
-.composer-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 10px; border-top: 1px solid var(--echo-host-border); }
+.composer-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--echo-host-border) 70%, transparent); }
 .composer-footer > .actions { flex-shrink: 0; gap: 6px; }
 .composer-library { display: grid; justify-items: start; gap: 5px; min-width: 0; }
 .share-option { display: flex; align-items: center; gap: 8px; padding: 4px 8px; margin-left: -8px; border-radius: 8px; font-size: 12px; white-space: nowrap; }
@@ -36,7 +36,7 @@
 .composer-library small { line-height: 1.5; }
 #clear-chat { font-size: 12px; color: var(--echo-host-muted); border: 0; border-radius: 10px; padding: 9px 12px; background: transparent; }
 #clear-chat:hover:enabled { color: var(--echo-host-text); background: var(--echo-host-panel); }
-#send-message { min-height: 42px; border-radius: 14px; padding: 9px 16px; }
+#send-message { min-height: 42px; border-radius: 11px; padding: 9px 17px; }
 #send-message span { display: inline-block; margin-left: 10px; font-size: 17px; }
 #stop-message { padding: 9px 12px; border-radius: 12px; }
 @media (max-width: 600px) {

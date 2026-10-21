@@ -11,6 +11,7 @@ export function mountChat(host) {
   const preview = byId('playlist-preview'); const name = byId('playlist-name'); const list = byId('playlist-tracks');
   const create = byId('create-playlist'); const clear = byId('clear-chat');
   let controller = null; let configured = false; let draft = null; let saving = false; let externalBusy = false; let research = null;
+  let promptRevision = 0;
   function resizePrompt() {
     prompt.style.height = '0px';
     prompt.style.height = Math.min(prompt.scrollHeight, 160) + 'px';
@@ -37,11 +38,13 @@ export function mountChat(host) {
       const reply = article.getBoundingClientRect(); const visible = viewport.getBoundingClientRect();
       if (reply.top > visible.bottom - 80) viewport.scrollTop += reply.top - visible.top;
     }
+    return article;
   }
   function controls() {
     const busy = controller !== null || externalBusy;
     research?.setExternalBusy(controller !== null || saving);
-    send.disabled = !configured || busy || saving; stop.hidden = controller === null;
+    send.disabled = !configured || busy || saving || !prompt.value.trim(); stop.hidden = controller === null;
+    transcript.setAttribute('aria-busy', String(controller !== null));
     share.disabled = busy || saving; clear.disabled = saving;
     create.disabled = busy || saving || !draft || draft.saved || !list.querySelector('input:checked');
     name.disabled = busy || saving || Boolean(draft?.playlistId);
@@ -50,6 +53,10 @@ export function mountChat(host) {
   function reset() {
     controller?.abort(); controller = null; client.clear(); draft = null;
     transcript.replaceChildren(); list.replaceChildren(); preview.hidden = true; prompt.value = ''; resizePrompt(); status.textContent = ''; controls();
+  }
+  function clearHistory() {
+    const text = prompt.value;
+    reset(); prompt.value = text; resizePrompt(); controls();
   }
   function showDraft(next) {
     draft = next; preview.hidden = false; name.value = draft.name; list.replaceChildren();
@@ -63,12 +70,14 @@ export function mountChat(host) {
     }
     byId('playlist-missing').textContent = draft.missing.length
       ? '曲库未匹配：' + draft.missing.map(track => track.title + ' — ' + track.artist).join('；') : '';
-    byId('playlist-count').textContent = draft.tracks.length + ' 首已匹配';
+    const seconds = draft.tracks.reduce((sum, track) => sum + (track.durationSeconds || 0), 0);
+    byId('playlist-count').textContent = draft.tracks.length + ' 首已匹配' + (seconds > 0 ? ' · ' + Math.floor(seconds / 60) + ':' + String(Math.floor(seconds % 60)).padStart(2, '0') : '');
   }
   async function submit() {
     if (send.disabled || !prompt.value.trim()) return;
-    const text = prompt.value.trim(); const active = new AbortController(); controller = active;
-    message('user', text); prompt.value = ''; resizePrompt(); controls();
+    const original = prompt.value; const revision = promptRevision;
+    const text = original.trim(); const active = new AbortController(); controller = active;
+    const sent = message('user', text); prompt.value = ''; resizePrompt(); controls(); prompt.focus({ preventScroll: true });
     try {
       const result = await client.send(text, { signal: active.signal, shareLibrary: share.checked,
         trackContext: research?.getContext() ?? null,
@@ -79,17 +88,20 @@ export function mountChat(host) {
       message('assistant', result.reply, result.sources); if (result.draft) showDraft(result.draft);
       status.textContent = '';
     } catch (error) {
-      if (controller === active) status.textContent = active.signal.aborted ? '已停止' : error.message;
+      if (controller === active) {
+        status.textContent = active.signal.aborted ? '已停止' : error.message;
+        if (promptRevision === revision) { prompt.value = original; resizePrompt(); sent.remove(); }
+      }
     } finally { if (controller === active) { controller = null; controls(); } }
   }
   send.onclick = () => { void submit(); };
-  prompt.oninput = resizePrompt;
+  prompt.oninput = () => { promptRevision++; resizePrompt(); controls(); };
   prompt.onkeydown = event => {
     if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); void submit(); }
   };
-  stop.onclick = () => { controller?.abort(); };
-  clear.onclick = reset;
-  share.onchange = reset;
+  stop.onclick = () => { controller?.abort(); prompt.focus({ preventScroll: true }); };
+  clear.onclick = () => { clearHistory(); prompt.focus({ preventScroll: true }); };
+  share.onchange = clearHistory;
   create.onclick = async () => {
     if (create.disabled) return;
     const target = draft;

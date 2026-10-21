@@ -1,7 +1,7 @@
 {
   "id": "echo.deepseek-details",
   "name": "DeepSeek 音乐资料",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "apiVersion": 2,
   "minEchoVersion": "26.10.21",
   "entry": "plugin.js",

@@ -49,6 +49,11 @@ export function displayResearch(host, results, result, { onResearch, onDraft }) 
     for (const work of result.works) {
       const row = element('li'); row.append(element('strong', work.title + ' — ' + work.artist),
         element('small', [work.relation, work.date, `来源 [${work.sourceIndex + 1}]`, work.track ? '曲库已匹配' : '曲库未匹配'].filter(Boolean).join(' · ')));
+      if (result.kind === 'explore') {
+        const explore = element('button', '继续探索'); explore.type = 'button';
+        explore.onclick = () => { void onResearch({ kind: 'explore', name: (work.title + ' — ' + work.artist).slice(0, 400) }); };
+        row.append(explore);
+      }
       list.append(row);
     }
     article.append(list);

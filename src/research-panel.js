@@ -1,14 +1,19 @@
 import { DeepSeekResearch } from './research.mjs';
 import { displayResearch, publishSources } from './research-view.js';
+import { DeepSeekExploration } from './exploration.mjs';
 
 export function mountResearch(host, { onDraft, onBusy, isBusy }) {
   const client = new DeepSeekResearch(host);
+  const exploration = new DeepSeekExploration(host, client);
   const input = document.getElementById('research-subject'); const contextLabel = document.getElementById('research-context');
   const results = document.getElementById('research-results'); const status = document.getElementById('research-status');
   const buttons = [...document.querySelectorAll('[data-research]')]; const current = document.getElementById('use-current-track');
-  let controller = null; let externalBusy = false; let configured = false; let selected = null;
+  let controller = null; let externalBusy = false; let configured = false; let selected = null; let kind = 'track';
   function controls() {
     for (const button of [...buttons, current, ...results.querySelectorAll('button')]) button.disabled = !configured || Boolean(controller) || externalBusy;
+    input.readOnly = Boolean(controller) || externalBusy;
+    results.setAttribute('aria-busy', String(Boolean(controller)));
+    for (const button of buttons) button.setAttribute('aria-pressed', String(button.dataset.research === kind));
     document.getElementById('stop-research').hidden = !controller;
   }
   async function useCurrent() {
@@ -22,8 +27,8 @@ export function mountResearch(host, { onDraft, onBusy, isBusy }) {
   }
   async function run(request) {
     if (!configured || controller || externalBusy || isBusy()) return;
+    kind = request.kind;
     const active = new AbortController(); controller = active; onBusy(true); controls();
-    for (const button of buttons) button.setAttribute('aria-pressed', String(button.dataset.research === request.kind));
     try {
       let name = request.name;
       if (!name) {
@@ -31,8 +36,9 @@ export function mountResearch(host, { onDraft, onBusy, isBusy }) {
         active.signal.throwIfAborted();
         name = request.kind === 'news' && track ? track.artist : input.value.trim();
       }
+      if (request.name) { selected = null; contextLabel.textContent = ''; }
       input.value = name;
-      const result = await client.lookup({ ...request, name }, { signal: active.signal,
+      const result = await (request.kind === 'explore' ? exploration : client).lookup({ ...request, name }, { signal: active.signal,
         onProgress: text => { if (controller === active) status.textContent = text; } });
       if (controller !== active) return;
       await publishSources(host, result.sources); active.signal.throwIfAborted();
@@ -48,12 +54,15 @@ export function mountResearch(host, { onDraft, onBusy, isBusy }) {
     finally { controls(); }
   };
   input.oninput = () => { selected = null; contextLabel.textContent = ''; };
+  input.onkeydown = event => {
+    if (event.key === 'Enter' && !event.isComposing) { event.preventDefault(); void run({ kind }); }
+  };
   for (const button of buttons) button.onclick = () => { void run({ kind: button.dataset.research }); };
   document.getElementById('stop-research').onclick = () => { controller?.abort(); };
   function reset() {
     controller?.abort(); controller = null; onBusy(false); selected = null; results.replaceChildren();
     input.value = ''; contextLabel.textContent = ''; status.textContent = '';
-    for (const button of buttons) button.setAttribute('aria-pressed', 'false');
+    kind = 'track';
     controls();
   }
   window.addEventListener('pagehide', reset, { once: true });

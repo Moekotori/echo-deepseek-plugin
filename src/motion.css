@@ -14,6 +14,7 @@
 #send-message span { transition: transform .16s ease-out; }
 #send-message:hover:enabled span { transform: translateY(-2px); }
 .share-option { transition: color .16s, background .16s; }
+.research-subject { transition: border-color .16s; }
 :root[data-reduced-motion=true] *,
 :root[data-reduced-motion=true] *::before,
 :root[data-reduced-motion=true] *::after { animation: none !important; transition: none !important; }

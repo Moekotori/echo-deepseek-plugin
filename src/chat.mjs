@@ -2,6 +2,7 @@ import { postDeepSeek, readDeepSeekKey } from './api.mjs';
 import { chatSystem, chatTools } from './chat-tools.mjs';
 import { preparePlaylist } from './playlist.mjs';
 import { localDate, searchMusic } from './music-search.mjs';
+import { queryLibrary } from './library-query.mjs';
 
 export class DeepSeekChat {
   constructor(host) { this.host = host; this.turns = []; this.proposal = null; }
@@ -37,7 +38,7 @@ export class DeepSeekChat {
       }
       if (round === 3 || message.tool_calls.length > 2) throw new Error('本轮选曲操作已达上限，请缩小要求后继续');
       const calls = message.tool_calls.map(call => {
-        if (typeof call.id !== 'string' || call.id.length > 100 || !['search_music', 'search_library', 'propose_playlist'].includes(call.function?.name)
+        if (typeof call.id !== 'string' || call.id.length > 100 || !['search_music', 'search_library', 'query_library', 'propose_playlist'].includes(call.function?.name)
           || typeof call.function.arguments !== 'string' || call.function.arguments.length > 16000) throw new Error('DeepSeek 工具调用无效');
         return { id: call.id, type: 'function', function: { name: call.function.name, arguments: call.function.arguments } };
       });
@@ -50,16 +51,23 @@ export class DeepSeekChat {
           onProgress('正在检索音乐资料…');
           const found = await searchMusic(this.host, input.query, key, signal);
           output = found.map(source => { sources.push(source); return { index: sources.length, ...source }; });
-        } else if (call.function.name === 'search_library') {
+        } else if (['search_library', 'query_library'].includes(call.function.name)) {
           if (!shareLibrary) throw new Error('尚未允许发送曲库选曲资料');
-          if (++searches > 3 || typeof input.search !== 'string' || input.search.length > 200) throw new Error('本轮曲库查询已达上限或查询无效');
+          if (++searches > 3) throw new Error('本轮曲库查询已达上限');
           onProgress('正在查询曲库…');
-          const page = await this.host.library.getTracks({ search: input.search, page: 1, pageSize: 40,
-            sourceProvider: 'local', sort: input.search.trim() ? 'titleAsc' : 'random' });
+          let tracks;
+          if (call.function.name === 'query_library') tracks = await queryLibrary(this.host, input, signal);
+          else {
+            if (typeof input.search !== 'string' || input.search.length > 200) throw new Error('曲库查询无效');
+            const page = await this.host.library.getTracks({ search: input.search, page: 1, pageSize: 40,
+              sourceProvider: 'local', sort: input.search.trim() ? 'titleAsc' : 'random' });
+            tracks = page.items;
+          }
           signal.throwIfAborted();
-          output = page.items.filter(track => !track.unavailable).slice(0, 40).map(track => {
+          output = tracks.filter(track => !track.unavailable).slice(0, 40).map(track => {
             const ref = 'r' + (references.size + 1); references.set(ref, track);
-            return { ref, title: track.title.slice(0, 200), artist: track.artist.slice(0, 200), album: track.album.slice(0, 200) };
+            return { ref, title: track.title.slice(0, 200), artist: track.artist.slice(0, 200), album: track.album.slice(0, 200),
+              ...(call.function.name === 'query_library' ? { genre: track.genre?.slice(0, 200) ?? null, year: track.year, durationSeconds: track.durationSeconds } : {}) };
           });
         } else {
           if (draft) throw new Error('每轮只生成一个歌单预览，请在下一条消息中调整');
@@ -69,8 +77,11 @@ export class DeepSeekChat {
           proposal = { name: draft.name, description: draft.description, tracks: shareLibrary
             ? draft.tracks.map(track => ({ title: track.title.slice(0, 200), artist: track.artist.slice(0, 200) }))
             : input.tracks.map(item => ({ title: item.title.slice(0, 200), artist: item.artist.slice(0, 200) })) };
+          if (input.durationMinutes !== undefined) proposal.durationMinutes = input.durationMinutes;
           // No local matches, counts or identifiers leave the machine in private mode.
-          output = { previewReady: true };
+          output = { previewReady: true, ...(shareLibrary && input.durationMinutes !== undefined ? {
+            durationSeconds: draft.tracks.reduce((sum, track) => sum + track.durationSeconds, 0), trackCount: draft.tracks.length,
+          } : {}) };
         }
         messages.push({ role: 'tool', tool_call_id: call.id, content: JSON.stringify(output) });
       }

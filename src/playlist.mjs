@@ -12,6 +12,9 @@ export async function findLocalTrack(host, { title, artist }, signal) {
 export async function preparePlaylist(host, input, references, signal) {
   const name = text(input?.name, 120);
   if (!name || !Array.isArray(input.tracks) || input.tracks.length < 1 || input.tracks.length > 50) throw new Error('歌单提案格式无效');
+  if (input.durationMinutes !== undefined && (!Number.isFinite(input.durationMinutes) || input.durationMinutes < 1 || input.durationMinutes > 1440)) throw new Error('歌单目标时长无效');
+  const budget = input.durationMinutes === undefined ? Infinity : input.durationMinutes * 60;
+  let duration = 0;
   const tracks = []; const missing = []; const ids = new Set();
   for (const item of input.tracks) {
     signal.throwIfAborted();
@@ -25,7 +28,11 @@ export async function preparePlaylist(host, input, references, signal) {
       track = await findLocalTrack(host, { title, artist }, signal);
       if (!track) missing.push({ title, artist });
     }
-    if (track && !ids.has(track.id)) { ids.add(track.id); tracks.push(track); }
+    if (track && !ids.has(track.id)) {
+      ids.add(track.id);
+      if (budget !== Infinity && (!Number.isFinite(track.durationSeconds) || track.durationSeconds <= 0 || duration + track.durationSeconds > budget)) continue;
+      duration += track.durationSeconds || 0; tracks.push(track);
+    }
   }
   return { name, description: text(input.description, 500), tracks, missing, playlistId: null, saved: false };
 }
