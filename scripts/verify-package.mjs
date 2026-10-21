@@ -9,6 +9,7 @@ const outer = JSON.parse(strFromU8(files['echo.workshop.json']));
 const bundle = JSON.parse(strFromU8(files['community.echo']));
 assert.equal(outer.version, pkg.version);
 assert.equal(bundle.manifest.version, pkg.version);
+assert.deepEqual(bundle.manifest, JSON.parse(readFileSync(new URL('manifest.json', root), 'utf8')));
 assert.equal(outer.license.id, pkg.license);
 assert.deepEqual(outer.networkHosts, ['api.deepseek.com']);
 assert.deepEqual(Object.keys(files).sort(), ['echo.workshop.json', ...outer.files.map(file => file.path)].sort());
@@ -20,6 +21,9 @@ for (const path of ['LICENSE.txt', 'THIRD_PARTY_NOTICES.md', 'vendor-LICENSE.txt
 const inner = new Map(bundle.files.map(file => [file.path, file.content]));
 assert.ok(inner.has(bundle.manifest.entry));
 for (const panel of bundle.manifest.contributes.panels) assert.ok(inner.has(panel.path));
-assert.ok(inner.has('research.css'));
+for (const [path, content] of inner) {
+  if (!path.endsWith('.html')) continue;
+  for (const match of content.matchAll(/<link\b[^>]*href=["']([^"']+)["']/giu)) assert.ok(inner.has(match[1]), 'Missing stylesheet: ' + match[1]);
+}
 assert.deepEqual(bundle.manifest.contributes.metadataProviders.map(provider => provider.activationStorageKey), ['api-key', 'api-key']);
 console.log(`PASS: ${pkg.version} package, declared resources, licenses and SHA-256 integrity`);

@@ -1,0 +1,22 @@
+@keyframes panel-arrive {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes reply-arrive {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.page-heading { animation: panel-arrive .26s ease-out; }
+.message-body { animation: reply-arrive .22s ease-out; }
+#key-settings[open] #settings { animation: panel-arrive .16s ease-out; }
+.composer button { transition: background .16s, color .16s, transform .12s; }
+.composer button:active:enabled { transform: scale(.97); }
+#send-message span { transition: transform .16s ease-out; }
+#send-message:hover:enabled span { transform: translateY(-2px); }
+.share-option { transition: color .16s, background .16s; }
+:root[data-reduced-motion=true] *,
+:root[data-reduced-motion=true] *::before,
+:root[data-reduced-motion=true] *::after { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

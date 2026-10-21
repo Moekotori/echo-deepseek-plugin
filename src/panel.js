@@ -11,6 +11,7 @@ const keys = mountKeySettings(echo, {
 });
 function theme(context) {
   document.documentElement.style.colorScheme = context.colorScheme;
+  document.documentElement.dataset.reducedMotion = String(context.reducedMotion);
   for (const [name, value] of Object.entries(context.appearance)) document.documentElement.style.setProperty('--echo-host-' + name, value);
 }
 const stop = echo.ui.onContextChanged(theme);

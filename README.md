@@ -21,7 +21,7 @@
 2. 在 ECHO 中启用插件，从侧栏进入 DeepSeek。
 3. 展开 API Key 设置，填入自己的 Key 并保存。插件包中没有预置 Key。
 
-本仓库源码版本为 **1.7.2**。创意工坊条目的实际版本以其发布记录为准。
+源码版本以 [manifest.json](manifest.json) 为准。创意工坊条目的实际版本以其发布记录为准。
 
 ## 缓存与费用
 
@@ -57,11 +57,40 @@ npm run check:package
 构建产物：
 
 - `content/`：可导入/发布的工坊内容，含完整性清单和许可证。
-- `dist/echo-deepseek-plugin-1.7.2.echo-workshop.zip`：本地导入包。
+- `dist/echo-deepseek-plugin-<version>.echo-workshop.zip`：本地导入包。
 
 构建和测试不需要 API Key，也不会请求 DeepSeek 或上传 Steam。`echo.workshop.project.json` 保留原公开工坊条目的项目资料；本仓库不包含发布凭据或自动发布脚本。新分支的插件如需单独发布，应使用自己的插件及工坊条目标识。
 
 源码在 `src/`；`*.test.mjs` 使用 Node.js 测试运行器，`key-panel.test.ts` 使用 Vitest 与 jsdom。构建脚本独立运行，不依赖 ECHOSteam 主程序仓库。`vendor/` 仅包含 MIT 许可的预览生成工具及原许可证。
+
+## 从 ECHOSteam 同步
+
+日常开发以 ECHOSteam 的 `workshop/deepseek-details/` 为源码主目录。这个仓库负责独立构建和公开发布；外部 PR 对插件源码的修改先合回主目录，再导出，避免两边分别维护。
+
+两个仓库放在同级目录时，在本仓库执行：
+
+```sh
+npm run sync:check
+npm run sync
+```
+
+`sync:check` 只列差异，有差异时退出码为 1；`sync` 更新本地文件，保留可审阅的 Git diff。默认源码位置为同级的 `ECHOSteam/workshop/deepseek-details`，其他目录可显式指定：
+
+```sh
+npm run sync -- --source /path/to/ECHOSteam/workshop/deepseek-details
+```
+
+需要一条命令验证并同步到 GitHub 时，在独立仓库干净且位于 `main` 的情况下执行：
+
+```sh
+npm run sync -- --push
+```
+
+该命令先检查目标远端和 Git 状态，获取远端 `main` 并仅允许快进，再同步、测试、构建和校验导入包；通过后只提交本次同步文件并推送，最后回读远端 SHA。无差异时不重复验证或生成提交。任何冲突、验证失败或预算超时都会停止；不会自动覆盖本地改动、重置分支或强推。默认不联网，只有 `--push` 才访问 GitHub。
+
+同步范围是 `src/`、插件测试、素材说明、工坊项目资料、`manifest.json` 和 `package-files.json`。版本来自 `manifest.json`，会同时更新独立仓库的 `package.json` 和锁文件版本。两份构建脚本都读取相同插件清单和静态资源清单。
+
+独立仓库的 README、许可证、npm 依赖、构建适配器和同步工具保留；主程序代码、开发记录、`.env`、凭据和构建产物不导出。`.sync-state.json` 只记录上次导出内容的哈希，不含机器路径；它用于识别独立仓库上的文件改动，并只删除之前确实导出过、现在已从源码移除的文件。
 
 ## 许可证与素材
 

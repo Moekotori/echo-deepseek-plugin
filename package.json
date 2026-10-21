@@ -22,7 +22,9 @@
     "test": "npm run test:unit && npm run test:panel",
     "test:unit": "node scripts/test-unit.mjs",
     "test:panel": "vitest run --maxWorkers=2",
-    "check:package": "node scripts/verify-package.mjs"
+    "check:package": "node scripts/verify-package.mjs",
+    "sync": "node scripts/sync-from-echosteam.mjs",
+    "sync:check": "node scripts/sync-from-echosteam.mjs --check"
   },
   "devDependencies": {
     "esbuild": "0.25.12",

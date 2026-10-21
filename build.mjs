@@ -8,23 +8,15 @@ import { createListingPreviewPng } from './vendor/preview-png.mjs';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const packageInfo = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
-const manifest = {
-  id: 'echo.deepseek-details', name: 'DeepSeek 音乐资料', version: packageInfo.version, apiVersion: 2,
-  minEchoVersion: '26.10.21', entry: 'plugin.js',
-  permissions: ['fs:plugin', 'network:request', 'library:read', 'library:control', 'playback:read', 'covers:read'],
-  contributes: {
-    commands: [{ id: 'configure-deepseek', title: 'DeepSeek 对话与歌单' }, { id: 'research-contributor', title: 'DeepSeek 创作人员作品' }],
-    panels: [{ id: 'deepseek-settings', title: 'DeepSeek', path: 'panel.html', placement: 'page', group: 'plugins', icon: 'sparkles' }],
-    metadataProviders: ['artist', 'album'].map(entity => ({ id: 'deepseek-' + entity, title: 'DeepSeek', entity, activationStorageKey: 'api-key',
-      ...(entity === 'album' ? { contributorCommandId: 'research-contributor' } : {}) })),
-  },
-};
+const manifest = JSON.parse(await readFile(join(root, 'manifest.json'), 'utf8'));
+if (packageInfo.version !== manifest.version) throw new Error('package.json 与 manifest.json 版本不一致，请先同步');
+const staticFiles = JSON.parse(await readFile(join(root, 'package-files.json'), 'utf8'));
 const result = await build({ entryPoints: [join(root, 'src/plugin.js')], bundle: true, write: false,
   format: 'iife', target: 'chrome120', legalComments: 'none' });
 const panel = await build({ entryPoints: [join(root, 'src/panel.js')], bundle: true, write: false,
   format: 'iife', target: 'chrome120', legalComments: 'none' });
 const files = [{ path: 'plugin.js', content: result.outputFiles[0].text }, { path: 'panel.js', content: panel.outputFiles[0].text },
-  ...await Promise.all(['panel.html', 'panel.css', 'research.css'].map(async path =>
+  ...await Promise.all(staticFiles.map(async path =>
     ({ path, content: await readFile(join(root, 'src', path), 'utf8') })))];
 const bundle = JSON.stringify({ type: 'echo-plugin-package', version: 1,
   exportedAt: '2026-10-21T00:00:00.000Z', manifest, files }, null, 2) + '\n';

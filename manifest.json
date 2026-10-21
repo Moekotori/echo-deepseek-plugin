@@ -1,0 +1,53 @@
+{
+  "id": "echo.deepseek-details",
+  "name": "DeepSeek 音乐资料",
+  "version": "1.7.2",
+  "apiVersion": 2,
+  "minEchoVersion": "26.10.21",
+  "entry": "plugin.js",
+  "permissions": [
+    "fs:plugin",
+    "network:request",
+    "library:read",
+    "library:control",
+    "playback:read",
+    "covers:read"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "id": "configure-deepseek",
+        "title": "DeepSeek 对话与歌单"
+      },
+      {
+        "id": "research-contributor",
+        "title": "DeepSeek 创作人员作品"
+      }
+    ],
+    "panels": [
+      {
+        "id": "deepseek-settings",
+        "title": "DeepSeek",
+        "path": "panel.html",
+        "placement": "page",
+        "group": "plugins",
+        "icon": "sparkles"
+      }
+    ],
+    "metadataProviders": [
+      {
+        "id": "deepseek-artist",
+        "title": "DeepSeek",
+        "entity": "artist",
+        "activationStorageKey": "api-key"
+      },
+      {
+        "id": "deepseek-album",
+        "title": "DeepSeek",
+        "entity": "album",
+        "activationStorageKey": "api-key",
+        "contributorCommandId": "research-contributor"
+      }
+    ]
+  }
+}
