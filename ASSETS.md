@@ -1,0 +1,7 @@
+# 角色素材
+
+`src/assets/whale-chan.webp`：2026-10-21 使用内置 image_gen 生成的原创插画，依用户要求参考蓝色大肥鱼 / DeepSeek 娘化形象的蓝发、鲸鱼鳍尾和蓝白女仆装元素。参考页面：https://aigengtu.com/zh/whale-chan 。未下载或打包该网站的二创图片，不宣称官方角色授权。最初用于本地工坊包，后依用户明确要求随 1.6.0 发布到工坊条目 `3823840647`；条目说明其并非 DeepSeek 官方插件。生成 PNG 以 Sharp 缩至最长边 640 并编码 WebP，保留透明背景，约 131 KB；页面复用同一静态资源，不增加后台网络请求或常驻图片缓存。
+
+生成工具：内置 image_gen，transparent_background=true。最终提示词：
+
+> Use case: stylized-concept. Asset type: transparent character illustration for a desktop music assistant UI. Primary request: an original polished cute chibi anthropomorphic blue whale girl inspired by the Chinese community DeepSeek-chan / 蓝色大肥鱼 archetype. Long flowing deep cobalt blue hair fading to light cyan at tips, small whale-fin-shaped side tufts (not cat ears), one elegant blue whale tail curving beside her, large blue eyes, tiny rosy cheeks, playful proud little smile. Fully clothed navy blue and white frilled maid dress with white apron and small blue ribbon, white frilled headband. Seated cheerful relaxed pose, wearing small white-and-blue over-ear headphones, hugging a small round blue whale cushion in her lap. Full character visible with tail, centered, generous transparent margins, no environment. Refined Japanese anime chibi illustration, clean fine blue outlines, soft cel shading, high quality gentle colors, charming readable silhouette. No words, no letters, no logos, no watermark. Genuine transparent alpha background. This is a new original illustration, do not copy an existing fanart.

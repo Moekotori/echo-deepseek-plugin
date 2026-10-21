@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>DeepSeek</title><link rel="stylesheet" href="panel.css"><link rel="stylesheet" href="research.css"></head>
+<body><main>
+  <header class="page-heading"><div class="identity"><img src="assets/whale-chan.webp" width="52" height="52" alt=""><h1>DeepSeek</h1></div>
+  <div class="key-controls"><details id="key-settings"><summary>API Key</summary><div id="settings">
+    <label for="api-key">DeepSeek API Key</label><input id="api-key" type="password" autocomplete="off" spellcheck="false" maxlength="512" placeholder="sk-…">
+    <div class="actions"><button id="save" type="button">保存</button><button id="clear" type="button">清除</button></div>
+  </div></details><span id="status" role="status" aria-live="polite"></span><span id="balance" role="status" aria-live="polite"></span></div></header>
+  <section id="research-tools" aria-label="音乐检索">
+    <div class="research-subject"><input id="research-subject" maxlength="400" aria-label="检索对象" placeholder="艺人、歌曲或创作人员"><button id="use-current-track" type="button">使用当前歌曲</button></div>
+    <small id="research-context"></small>
+    <div class="research-actions"><button type="button" data-research="news" aria-pressed="false">新作与演出</button><button type="button" data-research="track" aria-pressed="false">歌曲背景</button><button type="button" data-research="relations" aria-pressed="false">原唱与翻唱</button><button type="button" data-research="contributor" aria-pressed="false">创作人员作品</button><button type="button" id="stop-research" hidden>停止检索</button></div>
+    <p id="research-status" role="status" aria-live="polite"></p>
+  </section>
+  <section class="conversation" aria-label="DeepSeek 对话"><div class="character-welcome" aria-hidden="true"><img src="assets/whale-chan.webp" width="320" height="320" alt=""></div><section id="research-results" aria-label="检索结果"></section><div id="transcript" role="log" aria-label="对话记录" aria-live="polite"></div></section>
+  <section id="playlist-preview" aria-label="歌单预览" hidden>
+    <header><label for="playlist-name">歌单预览</label><span id="playlist-count"></span></header>
+    <input id="playlist-name" maxlength="120" aria-label="歌单名称">
+    <ol id="playlist-tracks"></ol><p id="playlist-missing"></p>
+    <button id="create-playlist" type="button">创建歌单</button>
+  </section>
+  <div class="composer">
+    <textarea id="prompt" maxlength="2000" rows="3" aria-label="消息" placeholder="聊聊音乐，或描述你想创建的歌单…"></textarea>
+    <div class="composer-footer"><div class="composer-library"><label class="share-option"><input id="share-library" type="checkbox">让 DeepSeek 从曲库选曲</label><small>开启后向 DeepSeek 发送当前查询匹配的曲名、艺术家和专辑。</small></div><div class="actions"><button id="clear-chat" type="button">清空对话</button><button id="stop-message" type="button" hidden>停止</button><button id="send-message" type="button">发送 <span aria-hidden="true">↑</span></button></div></div>
+    <p id="chat-status" role="status" aria-live="polite"></p>
+  </div>
+</main><script src="__bridge__.js"></script><script src="panel.js"></script></body></html>
