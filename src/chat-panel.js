@@ -2,16 +2,25 @@ import { DeepSeekChat } from './chat.mjs';
 import { savePlaylist } from './playlist.mjs';
 import { localDate } from './music-search.mjs';
 import { sourceList } from './research-view.js';
+import { recommendationList } from './recommendation-view.js';
 
-export function mountChat(host) {
+export function mountChat(host, { profile = null } = {}) {
   const byId = id => document.getElementById(id);
-  const client = new DeepSeekChat(host);
+  const client = new DeepSeekChat(host, { profile });
   const transcript = byId('transcript'); const prompt = byId('prompt'); const status = byId('chat-status');
   const send = byId('send-message'); const stop = byId('stop-message'); const share = byId('share-library');
   const preview = byId('playlist-preview'); const name = byId('playlist-name'); const list = byId('playlist-tracks');
   const create = byId('create-playlist'); const clear = byId('clear-chat');
   let controller = null; let configured = false; let draft = null; let saving = false; let externalBusy = false; let research = null;
   let promptRevision = 0;
+  let providerName = 'DeepSeek';
+  let selected = null; let personal = null;
+  function selectRecommendation(item) {
+    selected = { title: item.title.slice(0, 200), artist: item.artist.slice(0, 200), album: (item.track?.album ?? item.album ?? '').slice(0, 200) };
+    byId('chat-track-context').hidden = false;
+    byId('chat-track-label').textContent = '正在聊：' + selected.title + ' — ' + selected.artist;
+    prompt.focus({ preventScroll: true });
+  }
   function resizePrompt() {
     prompt.style.height = '0px';
     prompt.style.height = Math.min(prompt.scrollHeight, 160) + 'px';
@@ -20,7 +29,7 @@ export function mountChat(host) {
     const viewport = transcript.parentElement;
     const following = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 40;
     const article = document.createElement('article'); article.className = 'message'; article.dataset.role = role;
-    const label = document.createElement('strong'); label.textContent = role === 'user' ? '你' : 'DeepSeek';
+    const label = document.createElement('strong'); label.textContent = role === 'user' ? '你' : providerName;
     const body = document.createElement('div'); body.className = 'message-body';
     const paragraphs = text.split(/\n[ \t]*\n+/u);
     // Bound paragraph nodes while retaining the full text in the last paragraph.
@@ -49,9 +58,11 @@ export function mountChat(host) {
     create.disabled = busy || saving || !draft || draft.saved || !list.querySelector('input:checked');
     name.disabled = busy || saving || Boolean(draft?.playlistId);
     for (const checkbox of list.querySelectorAll('input')) checkbox.disabled = busy || saving || Boolean(draft?.saved);
+    personal?.setBusy(controller !== null || saving || externalBusy);
   }
   function reset() {
     controller?.abort(); controller = null; client.clear(); draft = null;
+    selected = null; byId('chat-track-context').hidden = true;
     transcript.replaceChildren(); list.replaceChildren(); preview.hidden = true; prompt.value = ''; resizePrompt(); status.textContent = ''; controls();
   }
   function clearHistory() {
@@ -78,16 +89,25 @@ export function mountChat(host) {
     const original = prompt.value; const revision = promptRevision;
     const text = original.trim(); const active = new AbortController(); controller = active;
     const sent = message('user', text); prompt.value = ''; resizePrompt(); controls(); prompt.focus({ preventScroll: true });
+    const thinking = document.createElement('div'); thinking.className = 'message thinking';
+    const progress = document.createElement('span'); progress.className = 'thinking-text'; thinking.append(progress); transcript.append(thinking);
+    transcript.parentElement.scrollTop = transcript.parentElement.scrollHeight;
     try {
       const result = await client.send(text, { signal: active.signal, shareLibrary: share.checked,
-        trackContext: research?.getContext() ?? null,
-        onProgress: text => { if (controller === active) status.textContent = text; } });
+        trackContext: selected ?? research?.getContext() ?? null,
+        onProgress: text => { if (controller === active) progress.textContent = text; } });
       if (controller !== active) return;
       if (result.sources.length) await research.showChatSources(result.sources);
       if (controller !== active) return;
-      message('assistant', result.reply, result.sources); if (result.draft) showDraft(result.draft);
+      thinking.remove();
+      const article = message('assistant', result.reply, result.sources);
+      if (result.recommendations.length) article.append(recommendationList(host, result.recommendations, {
+        onSelect: selectRecommendation, onError: error => { status.textContent = error.message; },
+      }));
+      if (result.draft) showDraft(result.draft);
       status.textContent = '';
     } catch (error) {
+      thinking.remove();
       if (controller === active) {
         status.textContent = active.signal.aborted ? '已停止' : error.message;
         if (promptRevision === revision) { prompt.value = original; resizePrompt(); sent.remove(); }
@@ -102,6 +122,7 @@ export function mountChat(host) {
   stop.onclick = () => { controller?.abort(); prompt.focus({ preventScroll: true }); };
   clear.onclick = () => { clearHistory(); prompt.focus({ preventScroll: true }); };
   share.onchange = clearHistory;
+  byId('clear-chat-track').onclick = () => { selected = null; byId('chat-track-context').hidden = true; prompt.focus({ preventScroll: true }); };
   create.onclick = async () => {
     if (create.disabled) return;
     const target = draft;
@@ -118,9 +139,11 @@ export function mountChat(host) {
   };
   window.addEventListener('pagehide', reset, { once: true });
   controls();
-  return { reset, preview(value) { if (!controller && !saving) { showDraft(value); controls(); } },
+  return { reset, clearHistory, selectRecommendation, preview(value) { if (!controller && !saving) { showDraft(value); controls(); } },
     isBusy: () => controller !== null || saving,
     setExternalBusy(value) { externalBusy = value; controls(); },
     connectResearch(value) { research = value; controls(); },
+    connectPersonalization(value) { personal = value; controls(); },
+    setProvider(value) { providerName = value; },
     setConfigured(value) { configured = value; controls(); } };
 }

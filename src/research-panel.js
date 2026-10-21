@@ -1,32 +1,38 @@
 import { DeepSeekResearch } from './research.mjs';
 import { displayResearch, publishSources } from './research-view.js';
 import { DeepSeekExploration } from './exploration.mjs';
+import { mountTabPill } from './tab-pill.js';
 
-export function mountResearch(host, { onDraft, onBusy, isBusy }) {
+export function mountResearch(host, { onDraft, onBusy, isBusy, onTrackSelected = () => {} }) {
   const client = new DeepSeekResearch(host);
   const exploration = new DeepSeekExploration(host, client);
   const input = document.getElementById('research-subject'); const contextLabel = document.getElementById('research-context');
   const results = document.getElementById('research-results'); const status = document.getElementById('research-status');
   const buttons = [...document.querySelectorAll('[data-research]')]; const current = document.getElementById('use-current-track');
   let controller = null; let externalBusy = false; let configured = false; let selected = null; let kind = 'track';
+  let searchable = true;
+  const placePill = mountTabPill(document.querySelector('.research-actions'));
   function controls() {
-    for (const button of [...buttons, current, ...results.querySelectorAll('button')]) button.disabled = !configured || Boolean(controller) || externalBusy;
+    for (const button of [...buttons, ...results.querySelectorAll('button')]) button.disabled = !searchable || !configured || Boolean(controller) || externalBusy;
+    current.disabled = !configured || Boolean(controller) || externalBusy;
     input.readOnly = Boolean(controller) || externalBusy;
     results.setAttribute('aria-busy', String(Boolean(controller)));
     for (const button of buttons) button.setAttribute('aria-pressed', String(button.dataset.research === kind));
     document.getElementById('stop-research').hidden = !controller;
+    placePill();
   }
   async function useCurrent() {
     const playback = await host.playback.getStatus();
     if (!playback.currentTrackId) throw new Error('当前没有歌曲');
     const track = await host.library.getTrack(playback.currentTrackId);
     selected = { title: track.title.slice(0, 200), artist: track.artist.slice(0, 200), album: track.album.slice(0, 200) };
+    onTrackSelected(selected);
     input.value = selected.title + ' — ' + selected.artist;
     contextLabel.textContent = '已带入：' + input.value;
     return selected;
   }
   async function run(request) {
-    if (!configured || controller || externalBusy || isBusy()) return;
+    if (!searchable || !configured || controller || externalBusy || isBusy()) return;
     kind = request.kind;
     const active = new AbortController(); controller = active; onBusy(true); controls();
     try {
@@ -68,6 +74,11 @@ export function mountResearch(host, { onDraft, onBusy, isBusy }) {
   window.addEventListener('pagehide', reset, { once: true });
   controls();
   return { run, reset, getContext: () => selected,
+    setProvider(value) {
+      searchable = value === 'deepseek';
+      status.textContent = searchable ? '' : '此接口支持对话与曲库选曲，联网资料检索请使用推荐的 DeepSeek。';
+      controls();
+    },
     setConfigured(value) { configured = value; controls(); },
     setExternalBusy(value) { externalBusy = value; controls(); },
     async showChatSources(sources) { await publishSources(host, sources); },

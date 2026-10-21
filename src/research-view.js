@@ -6,7 +6,10 @@ export async function publishSources(host, sources) {
   await host.ui.setPanelPresentation({ sourceLinks: sources.map((source, index) => ({ label: `[${index + 1}] ${source.label}`, url: source.url })) });
 }
 export function sourceList(host, sources, fetchedAt, expanded = false) {
-  const details = element('details', undefined, 'research-sources'); details.open = expanded; details.append(element('summary', '来源与日期'));
+  const details = element('details', undefined, 'research-sources'); details.open = expanded;
+  const summary = element('summary'); const badges = element('span', undefined, 'source-badges'); badges.setAttribute('aria-hidden', 'true');
+  for (const source of sources.slice(0, 3)) badges.append(element('span', new URL(source.url).hostname.replace(/^www\./u, '').charAt(0)));
+  summary.append(badges, '来源与日期'); details.append(summary);
   if (!expanded) details.append(element('small', '检索于 ' + fetchedAt));
   const list = element('ol');
   for (const source of sources) {
@@ -37,7 +40,7 @@ export function displayResearch(host, results, result, { onResearch, onDraft }) 
     article.append(list);
   }
   if (result.people.length) {
-    const people = element('div', undefined, 'actions');
+    const people = element('div', undefined, 'actions research-people');
     for (const person of result.people) {
       const button = element('button', person.role + ' · ' + person.name); button.type = 'button';
       button.onclick = () => { void onResearch({ kind: 'contributor', name: person.name, question: person.role }); }; people.append(button);
@@ -47,7 +50,8 @@ export function displayResearch(host, results, result, { onResearch, onDraft }) 
   if (result.works.length) {
     const list = element('ul', undefined, 'research-works');
     for (const work of result.works) {
-      const row = element('li'); row.append(element('strong', work.title + ' — ' + work.artist),
+      const name = element('strong', work.title); name.append(element('span', ' — ' + work.artist));
+      const row = element('li'); row.append(name,
         element('small', [work.relation, work.date, `来源 [${work.sourceIndex + 1}]`, work.track ? '曲库已匹配' : '曲库未匹配'].filter(Boolean).join(' · ')));
       if (result.kind === 'explore') {
         const explore = element('button', '继续探索'); explore.type = 'button';
@@ -59,7 +63,7 @@ export function displayResearch(host, results, result, { onResearch, onDraft }) 
     article.append(list);
     const tracks = [...new Map(result.works.filter(work => work.track).map(work => [work.track.id, work.track])).values()];
     if (tracks.length) {
-      const prepare = element('button', '用匹配作品准备歌单'); prepare.type = 'button';
+      const prepare = element('button', '用匹配作品准备歌单', 'research-prepare'); prepare.type = 'button';
       prepare.onclick = () => onDraft({ name: (result.name + ' · 相关作品').slice(0, 120), description: '', tracks, missing: [], playlistId: null, saved: false });
       article.append(prepare);
     }

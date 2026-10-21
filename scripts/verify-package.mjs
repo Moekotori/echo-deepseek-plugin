@@ -11,15 +11,16 @@ assert.equal(outer.version, pkg.version);
 assert.equal(bundle.manifest.version, pkg.version);
 assert.deepEqual(bundle.manifest, JSON.parse(readFileSync(new URL('manifest.json', root), 'utf8')));
 assert.equal(outer.license.id, pkg.license);
-assert.deepEqual(outer.networkHosts, ['api.deepseek.com']);
+assert.deepEqual(outer.networkHosts, ['api.deepseek.com', 'api.openai.com', 'api.anthropic.com']);
 assert.deepEqual(Object.keys(files).sort(), ['echo.workshop.json', ...outer.files.map(file => file.path)].sort());
 for (const file of outer.files) {
   assert.equal(files[file.path].byteLength, file.size);
   assert.equal(createHash('sha256').update(files[file.path]).digest('hex'), file.sha256);
 }
-for (const path of ['LICENSE.txt', 'THIRD_PARTY_NOTICES.md', 'vendor-LICENSE.txt', 'ASSETS.md']) assert.ok(files[path]);
+for (const path of ['LICENSE.txt', 'THIRD_PARTY_NOTICES.md', 'THIRD_PARTY_NOTICES.txt', 'vendor-LICENSE.txt', 'ASSETS.md']) assert.ok(files[path]);
 const inner = new Map(bundle.files.map(file => [file.path, file.content]));
 assert.ok(inner.has(bundle.manifest.entry));
+assert.equal(inner.get('THIRD_PARTY_NOTICES.txt'), readFileSync(new URL('THIRD_PARTY_NOTICES.txt', root), 'utf8'));
 for (const panel of bundle.manifest.contributes.panels) assert.ok(inner.has(panel.path));
 for (const [path, content] of inner) {
   if (!path.endsWith('.html')) continue;

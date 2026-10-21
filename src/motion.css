@@ -1,32 +1,84 @@
-@keyframes panel-arrive {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: none; }
+:root {
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --ease-spring: cubic-bezier(.34, 1.4, .64, 1);
+  --ease-std: cubic-bezier(.4, 0, .2, 1);
 }
-@keyframes reply-arrive {
-  from { opacity: 0; transform: translateY(3px); }
-  to { opacity: 1; transform: none; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes rise-soft { from { opacity: 0; transform: translateY(10px); filter: blur(3px); } }
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.94); } }
+@keyframes float { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-8px) rotate(-1.5deg); } }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px) rotate(-4deg); } }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+@keyframes drift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(2%, -2%); } }
+@keyframes bubbles { from { transform: translateY(0); } to { transform: translateY(-14px); } }
+
+/* Ambient */
+.backdrop::before { animation: drift 28s ease-in-out infinite; }
+.backdrop::after { animation: bubbles 9s ease-in-out infinite alternate; }
+.character-welcome img { animation: float 6s ease-in-out infinite; }
+.identity > img { transition: transform .6s var(--ease-spring); }
+.identity:hover > img { transform: rotate(-10deg) scale(1.08); }
+
+/* Arrivals */
+.page-heading, #research-tools { animation: rise .6s var(--ease-out) both; }
+#research-tools { animation-delay: .05s; }
+.composer { animation: rise .7s .1s var(--ease-out) both; }
+.message { animation: rise-soft .6s var(--ease-out) both; }
+.message[data-role=user] .message-body { transform-origin: bottom right; animation: pop .5s var(--ease-spring) both; }
+.message:not([data-role=user]) .message-body p { animation: rise .7s var(--ease-out) both; }
+.message-body p:nth-child(2) { animation-delay: .07s; } .message-body p:nth-child(3) { animation-delay: .14s; } .message-body p:nth-child(n+4) { animation-delay: .21s; }
+.message.thinking::before { animation: bob 1.4s ease-in-out infinite; }
+.thinking-text { animation: shimmer 2.2s linear infinite; }
+.recommendation-list > li, .research-items > li { animation: rise .55s var(--ease-out) both; }
+.recommendation-list > li:nth-child(2), .research-items > li:nth-child(2) { animation-delay: .06s; }
+.recommendation-list > li:nth-child(3), .research-items > li:nth-child(3) { animation-delay: .12s; }
+.recommendation-list > li:nth-child(n+4), .research-items > li:nth-child(n+4) { animation-delay: .18s; }
+.research-heading, #daily-results > h2 { animation: rise .6s var(--ease-out) both; }
+.research-article > p, #daily-results > p { animation: rise .6s .08s var(--ease-out) both; }
+.research-people, .research-works, #research-results > .research-sources { animation: rise .6s .18s var(--ease-out) both; }
+#chat-track-context { animation: pop .45s var(--ease-spring) both; }
+#playlist-preview { animation: unfold .55s var(--ease-out) both; }
+@keyframes unfold { from { opacity: 0; max-height: 0; padding-block: 0; } }
+#research-status:not(:empty), #personal-status:not(:empty), #chat-status:not(:empty) { animation: rise .3s var(--ease-out) both; }
+
+/* Popovers scale out of their trigger and fade back on close. */
+#key-settings::details-content, #music-preferences::details-content { transition: content-visibility .3s allow-discrete; }
+#settings, .preferences-body { transition: opacity .2s var(--ease-std), transform .45s var(--ease-out); }
+#key-settings:not([open]) #settings, #music-preferences:not([open]) .preferences-body { opacity: 0; transform: translateY(-6px) scale(.96); }
+@starting-style {
+  #key-settings[open] #settings, #music-preferences[open] .preferences-body { opacity: 0; transform: translateY(-6px) scale(.96); }
 }
-:root { --motion-settle: cubic-bezier(.22, .75, .25, 1); }
-.page-heading { animation: panel-arrive .28s var(--motion-settle); }
-.message-body { animation: reply-arrive .24s var(--motion-settle); }
-#key-settings[open] #settings { animation: panel-arrive .18s var(--motion-settle); }
-#key-settings > summary, #api-key, #settings button { transition: background .2s ease-out, color .2s ease-out, border-color .2s ease-out, box-shadow .22s ease-out; }
-.composer { animation: panel-arrive .32s var(--motion-settle); transition: border-color .22s ease-out, box-shadow .28s ease-out; }
-.composer button { transition: background .2s ease-out, border-color .2s ease-out, color .2s ease-out, box-shadow .22s ease-out, transform .18s var(--motion-settle); }
-.composer button:active:enabled { transform: scale(.98); transition-duration: .09s; }
-#send-message span { transition: transform .22s var(--motion-settle); }
-.composer #send-message:hover:enabled { transform: translateY(-1px); }
-.composer #send-message:active:enabled { transform: translateY(0) scale(.98); }
-#send-message:hover:enabled span { transform: translateY(-1px); }
-.share-option { transition: color .2s ease-out, background .2s ease-out; }
-.research-subject { transition: border-color .2s ease-out; }
-#chat-status:not(:empty) { animation: reply-arrive .18s var(--motion-settle); }
+.research-sources::details-content { block-size: 0; overflow: hidden; opacity: 0; transition: block-size .45s var(--ease-out), opacity .3s, content-visibility .45s allow-discrete; }
+.research-sources[open]::details-content { block-size: auto; opacity: 1; }
+.research-sources > summary::after { transition: transform .35s var(--ease-out); }
+
+/* Interaction feedback */
+button, summary { transition: color .2s var(--ease-std), background-color .2s var(--ease-std), box-shadow .3s var(--ease-out), opacity .2s, transform .3s var(--ease-out); }
+button:active:enabled, summary:active { transform: scale(.96); transition-duration: .1s; }
+#send-message:hover:enabled, #create-playlist:hover:enabled, #save:hover:enabled, .research-prepare:hover:enabled { transform: translateY(-1px); filter: brightness(1.05); box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--accent) 85%, transparent); }
+#send-message svg { transition: transform .35s var(--ease-spring); }
+#send-message:hover:enabled svg { transform: translateY(-2px); }
+.recommendation-list [data-play] { transition: transform .35s var(--ease-spring), box-shadow .3s, background-color .2s; }
+.recommendation-list [data-play]:hover:enabled { transform: scale(1.1); }
+.recommendation-list > li::after, .research-sources li { transition: opacity .25s var(--ease-std), background-color .2s; }
+.research-pill { transition: transform .5s var(--ease-spring), width .5s var(--ease-spring), opacity .2s; }
+.research-actions:not(:has([aria-pressed=true])) .research-pill { opacity: 0; }
+.provider-thumb { transition: transform .45s var(--ease-spring); }
+.share-option input, .preferences-body input[type=checkbox] { transition: background-color .25s var(--ease-std); }
+.share-option input::after, .preferences-body input[type=checkbox]::after { transition: transform .4s var(--ease-spring), width .2s; }
+.share-option input:active:enabled::after, .preferences-body input[type=checkbox]:active:enabled::after { width: 17px; }
+.share-option input:checked:active:enabled::after, .preferences-body input[type=checkbox]:checked:active:enabled::after { transform: translateX(9px); }
+#playlist-tracks input { transition: background-color .2s, border-color .2s; }
+#playlist-tracks input::after { transition: transform .35s var(--ease-spring); }
+#playlist-tracks label, #playlist-name { transition: color .2s, background-color .2s, border-color .2s; }
+.composer-library small { transition: grid-template-rows .4s var(--ease-out), opacity .3s; }
+.research-subject, .composer, #settings input { transition: background-color .25s var(--ease-std), border-color .25s, box-shadow .35s var(--ease-out); }
+.search-icon { transition: color .25s; }
+
 :root[data-reduced-motion=true] *,
 :root[data-reduced-motion=true] *::before,
-:root[data-reduced-motion=true] *::after { animation: none !important; transition: none !important; }
-:root[data-reduced-motion=true] .composer button,
-:root[data-reduced-motion=true] #send-message span { transform: none !important; }
+:root[data-reduced-motion=true] *::after,
+:root[data-reduced-motion=true] ::details-content { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
-  .composer button, #send-message span { transform: none !important; }
+  *, *::before, *::after, ::details-content { animation: none !important; transition: none !important; }
 }

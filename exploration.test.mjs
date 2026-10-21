@@ -1,3 +1,4 @@
+import { modelResponse } from './test-support.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DeepSeekResearch } from './src/research.mjs';
@@ -20,7 +21,7 @@ function fixture() {
           works: request.kind === 'contributor' ? [{ title: 'Song', artist: 'Artist', relation: '作曲', sourceIndex: 0 },
             { title: 'Other Song', artist: 'Artist', relation: '作曲', sourceIndex: 0 }] : [] }) } }] };
       }
-      return { ok: true, body: JSON.stringify(data) };
+      return modelResponse(data);
     } }, library: { getTracks: async () => ({ items: matches ? [{ id: 'private-id', title: 'Other Song', artist: 'Artist', album: 'Private album', path: '/private/song', unavailable: false }] : [] }) } };
   return { host, stored, posts, searches, unmatch: () => { matches = false; }, client: new DeepSeekExploration(host, new DeepSeekResearch(host)) };
 }

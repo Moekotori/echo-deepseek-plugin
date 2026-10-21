@@ -1,3 +1,4 @@
+import { modelResponse } from './test-support.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DeepSeekResearch, normalizeResearch } from './src/research.mjs';
@@ -13,7 +14,7 @@ function fixture() {
       : { choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ summary: 'Verified facts',
         items: [{ title: 'Past show', type: 'concert', date: '2025-01-01', sourceIndex: 0 }],
         works: [{ title: 'Song', artist: 'Artist', relation: '作曲', sourceIndex: 0 }], people: [] }) } }] };
-    return { ok: true, body: JSON.stringify(value) };
+    return modelResponse(value);
   } }, library: { getTracks: async query => { reads.push(query); return { items: [{ id: 'private-id', title: 'Song', artist: 'Artist', album: 'Private album', path: '/private/music', unavailable: false }] }; } } };
   return { host, calls, reads, stored, client: new DeepSeekResearch(host) };
 }
@@ -65,7 +66,7 @@ test('normalizes bounds and rejects unsupported relationships without inventing 
 });
 test('aborting search prevents generation and local queries', async () => {
   const { client, host, calls, reads } = fixture(); const controller = new AbortController();
-  host.network.request = async () => { controller.abort(); return { ok: true, body: JSON.stringify({ results: [source] }) }; };
+  host.network.request = async () => { controller.abort(); return modelResponse({ results: [source] }); };
   await assert.rejects(client.lookup({ kind: 'track', name: 'Song' }, { signal: controller.signal }), error => error.name === 'AbortError');
   assert.equal(calls.length, 0); assert.equal(reads.length, 0);
 });
@@ -76,7 +77,7 @@ test('chat uses live music search and exposes only a user-selected song display 
     if (options.url.endsWith('/search')) return request(options);
     calls.push({ url: options.url, body: JSON.parse(options.body) });
     const message = completions++ === 0 ? { tool_calls: [{ id: 'web', type: 'function', function: { name: 'search_music', arguments: '{"query":"Song Artist interview"}' } }] } : { content: 'Background [1]' };
-    return { ok: true, body: JSON.stringify({ choices: [{ finish_reason: message.tool_calls ? 'tool_calls' : 'stop', message }] }) };
+    return modelResponse({ choices: [{ finish_reason: message.tool_calls ? 'tool_calls' : 'stop', message }] });
   };
   const result = await new DeepSeekChat(host).send('这首歌有什么背景？', { signal: signal(), trackContext: { title: 'Song', artist: 'Artist', album: 'Album', path: '/private/music', id: 'private-track' } });
   assert.equal(result.sources[0].publishedAt, '2026-10-20');

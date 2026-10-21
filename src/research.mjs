@@ -2,6 +2,7 @@ import { postDeepSeek, readDeepSeekKey } from './api.mjs';
 import { localDate, searchMusic } from './music-search.mjs';
 import { findLocalTrack } from './playlist.mjs';
 import { normalizeCacheText, ResultCache, resultTtl } from './result-cache.mjs';
+import { modelProfile, requireDeepSeekSearch } from './model-settings.mjs';
 
 const modes = {
   news: ['官方 新专辑 单曲 发行 公告', 'official live concert 演唱会 公告'],
@@ -42,6 +43,7 @@ export class DeepSeekResearch {
   constructor(host) { this.host = host; this.cache = new ResultCache(host, 'research'); }
   async lookup({ kind, name, question = '', force = false }, { signal, onProgress = () => {} }) {
     if (!modes[kind] || typeof name !== 'string' || !name.trim() || name.length > 400 || typeof question !== 'string' || question.length > 1000) throw new Error('检索对象或问题无效');
+    requireDeepSeekSearch(await modelProfile(this.host));
     const key = await readDeepSeekKey(this.host);
     const result = await this.cache.lookup({ kind, name: normalizeCacheText(name), question: question.normalize('NFC').trim().replace(/\s+/gu, ' ') },
       { signal, force, ttlMs: kind === 'news' ? resultTtl.news : resultTtl.research },

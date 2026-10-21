@@ -1,3 +1,4 @@
+import { modelResponse } from './test-support.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DeepSeekChat } from './src/chat.mjs';
@@ -13,7 +14,7 @@ export function fixture(replies = [ { tool_calls: [call('propose_playlist', prop
     cancel: async () => {}, request: async options => {
       posts.push(JSON.parse(options.body)); const reply = replies.shift();
       assert.ok(reply, 'unexpected extra API call');
-      return { ok: true, body: JSON.stringify({ choices: [{ finish_reason: reply.tool_calls ? 'tool_calls' : 'stop', message: reply }] }) };
+      return modelResponse({ choices: [{ finish_reason: reply.tool_calls ? 'tool_calls' : 'stop', message: reply }] });
     },
   }, library: {
     getTracks: async query => { reads.push(query); return { items: [track] }; },
@@ -32,7 +33,7 @@ test('private mode matches locally, never transmits library results, and saves o
   assert.equal(result.draft.tracks[0].id, track.id);
   const remote = JSON.stringify(posts);
   for (const privateValue of [track.id, track.path, track.album, track.coverUrl]) assert.equal(remote.includes(privateValue), false);
-  assert.deepEqual(posts[0].tools.map(tool => tool.function.name), ['search_music', 'propose_playlist']);
+  assert.deepEqual(posts[0].tools.map(tool => tool.function.name), ['search_music', 'propose_playlist', 'recommend_tracks']);
   await savePlaylist(host, result.draft, [track.id, 'fabricated-id']);
   assert.deepEqual(writes, [['create', { name: proposal.name, description: '' }], ['add', 'playlist', [track.id]]]);
   await assert.rejects(savePlaylist(host, result.draft, [track.id]), /已创建/);
@@ -72,7 +73,7 @@ test('preserves the draft for follow-up instructions while bounding history and 
   await client.send('准备一张歌单', options());
   host.network.request = async request => {
     posts.push(JSON.parse(request.body));
-    return { ok: true, body: JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: '好的。' } }] }) };
+    return modelResponse({ choices: [{ finish_reason: 'stop', message: { content: '好的。' } }] });
   };
   for (let i = 0; i < 12; i++) await client.send('继续 ' + i, options());
   assert.equal(client.turns.length, 8);

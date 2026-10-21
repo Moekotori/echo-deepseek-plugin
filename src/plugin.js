@@ -1,5 +1,7 @@
 import { DeepSeekDetails } from './client.mjs';
+import { startDailyRuntime } from './daily-runtime.mjs';
 const client = new DeepSeekDetails(echo);
+const daily = startDailyRuntime(echo);
 echo.commands.register('configure-deepseek', { title: 'DeepSeek 对话与歌单' }, () => echo.ui.openPanel('deepseek-settings'));
 echo.commands.register('research-contributor', { title: 'DeepSeek 创作人员作品' }, async input => {
   if (input == null) return echo.ui.openPanel('deepseek-settings');
@@ -11,4 +13,4 @@ echo.commands.register('research-contributor', { title: 'DeepSeek 创作人员�
 for (const entity of ['artist', 'album']) {
   echo.metadata.registerProvider('deepseek-' + entity, { title: 'DeepSeek' }, (request, context) => client.lookup(request, context));
 }
-window.addEventListener('pagehide', () => client.dispose(), { once: true });
+window.addEventListener('pagehide', () => { client.dispose(); void daily.dispose(); }, { once: true });

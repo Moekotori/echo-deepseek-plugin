@@ -1,3 +1,5 @@
+import { completeModel } from './model-providers.mjs';
+
 export async function readDeepSeekKey(host) {
   await requireSecureDeepSeekStorage(host);
   const stored = await host.storage.get('api-key');
@@ -13,6 +15,7 @@ export async function requireSecureDeepSeekStorage(host) {
 }
 
 export async function postDeepSeek(host, path, body, key, signal) {
+  if (path === '/chat/completions') return completeModel(host, { provider: 'deepseek', baseUrl: 'https://api.deepseek.com', model: body.model, key }, body, signal);
   return requestDeepSeek(host, path, 'POST', body, key, signal);
 }
 

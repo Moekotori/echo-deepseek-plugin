@@ -1,6 +1,6 @@
 # Third-party notices
 
-The plugin source is licensed under AGPL-3.0-only. The build uses the packages below; their source and license files are supplied by npm when installing dependencies. None of these packages is a runtime dependency of the sandboxed plugin.
+The plugin source is licensed under AGPL-3.0-only. Bundled runtime protocol adapters and their complete license texts are listed in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt), included in both the plugin package and import ZIP. They include Pi AI 1.3.0 (MIT), OpenAI SDK (Apache-2.0), Anthropic SDK (MIT), partial-json (MIT), StableLib base64 (MIT), fast-sha256 (Unlicense), and standardwebhooks (upstream Apache-2.0; npm metadata also declares MIT). Only the imported protocol adapter code is bundled; Pi Agent Core and the coding-agent CLI are not included. The build and test tools below run during development; their source and license files are supplied by npm when installing dependencies.
 
 | Component | Version | License | Use and source |
 | --- | --- | --- | --- |

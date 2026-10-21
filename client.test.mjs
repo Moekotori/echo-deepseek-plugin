@@ -1,3 +1,4 @@
+import { modelResponse } from './test-support.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DeepSeekDetails } from './src/client.mjs';
@@ -15,7 +16,7 @@ function fixture() {
       const value = options.url.endsWith('/search')
         ? { results: [{ title: 'Source', url: 'https://example.org/music', summary: 'Verified background' }] }
         : { choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(info) } }] };
-      return { ok: true, body: JSON.stringify(value) };
+      return modelResponse(value);
     },
   } };
   return { client: new DeepSeekDetails(host), host, calls, setKey: value => { key = value; }, setInfo: value => { info = { ...info, ...value }; } };
@@ -110,7 +111,7 @@ test('returns real Bilibili and YouTube video links alongside background sources
       { title: 'not a video', url: 'https://www.bilibili.com/read/cv123' },
     ] : [{ title: 'Album official live', url: 'https://www.youtube.com/watch?v=fixture123' },
       { title: 'fake domain', url: 'https://youtube.com.example.org/watch?v=fixture123' }];
-    return { ok: true, status: 200, body: JSON.stringify({ results }) };
+    return modelResponse({ results });
   };
   const value = await client.lookup(request, context());
   assert.deepEqual(value.sources.map(source => source.url), ['https://example.org/music',

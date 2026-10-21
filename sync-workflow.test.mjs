@@ -17,6 +17,9 @@ function fixture(t) {
   writeFileSync(resolve(source, 'src/plugin.js'), 'export const version = 1;\n');
   writeFileSync(resolve(source, 'manifest.json'), JSON.stringify({ id: 'echo.deepseek-details', version: '1.7.3' }));
   writeFileSync(resolve(source, 'key-panel.test.ts'), "resolve('workshop/deepseek-details/src/panel.html');\n");
+  writeFileSync(resolve(source, 'model-panel.test.ts'), "readFileSync('workshop/deepseek-details/src/panel.html');\n");
+  writeFileSync(resolve(source, 'test-support.mjs'), 'export const wire = true;\n');
+  writeFileSync(resolve(source, 'THIRD_PARTY_NOTICES.txt'), 'Runtime dependency licenses\n');
   writeFileSync(resolve(source, '.env'), 'PRIVATE_LOCAL_CONFIG=fixture');
   writeFileSync(resolve(source, 'PLAN.md'), 'private working notes');
   writeFileSync(resolve(target, 'package.json'), JSON.stringify({ name: 'echo-deepseek-plugin', version: '1.7.2', scripts: { build: 'independent' } }));
@@ -30,6 +33,9 @@ test('syncs only public source, adapts test paths, updates both versions, and is
   applySync(target, planSync(source, target));
   assert.equal(readFileSync(resolve(target, 'src/plugin.js'), 'utf8'), 'export const version = 1;\n');
   assert.equal(readFileSync(resolve(target, 'key-panel.test.ts'), 'utf8'), "resolve('src/panel.html');\n");
+  assert.equal(readFileSync(resolve(target, 'model-panel.test.ts'), 'utf8'), "readFileSync('src/panel.html');\n");
+  assert.equal(readFileSync(resolve(target, 'test-support.mjs'), 'utf8'), 'export const wire = true;\n');
+  assert.equal(readFileSync(resolve(target, 'THIRD_PARTY_NOTICES.txt'), 'utf8'), 'Runtime dependency licenses\n');
   assert.equal(JSON.parse(readFileSync(resolve(target, 'package.json'))).version, '1.7.3');
   assert.equal(JSON.parse(readFileSync(resolve(target, 'package-lock.json'))).packages[''].version, '1.7.3');
   assert.equal(readFileSync(resolve(target, 'README.md'), 'utf8'), 'standalone documentation');

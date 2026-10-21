@@ -5,6 +5,7 @@ import { artworkPrompt, searchArtistArtwork, selectedArtistArtwork } from './art
 import { searchMusic } from './music-search.mjs';
 import { searchMusicVideos } from './video-sources.mjs';
 import { normalizeCacheText, ResultCache, resultTtl } from './result-cache.mjs';
+import { modelProfile, requireDeepSeekSearch } from './model-settings.mjs';
 
 /** Only display identity enters the prompt; no file paths, library IDs or playback state. */
 export class DeepSeekDetails {
@@ -14,6 +15,7 @@ export class DeepSeekDetails {
   }
   async lookup(request, { signal }) {
     signal.throwIfAborted();
+    requireDeepSeekSearch(await modelProfile(this.host));
     const key = await readDeepSeekKey(this.host);
     const cacheIdentity = { entity: request.entity, name: normalizeCacheText(request.name),
       artist: request.entity === 'album' ? normalizeCacheText(request.artist) : '', year: request.entity === 'album' ? request.year ?? null : null };

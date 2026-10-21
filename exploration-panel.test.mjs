@@ -1,3 +1,4 @@
+import { modelResponse } from './test-support.mjs';
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -28,7 +29,7 @@ function hostFixture() {
       else { const request = JSON.parse(input.messages.at(-1).content); value = { choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ summary: 'Verified background', items: [],
         people: request.kind === 'track' ? [{ name: 'Composer', role: '作曲', sourceIndex: 0 }] : [],
         works: request.kind === 'contributor' ? [{ title: track.title, artist: track.artist, relation: '作曲', sourceIndex: 0 }] : [] }) } }] }; }
-      return { ok: true, body: JSON.stringify(value) };
+      return modelResponse(value);
     } } };
   return { host, published, drafts, paid: () => paid };
 }
@@ -55,7 +56,7 @@ test('composer submits natural language and shows a bounded-duration draft befor
   const tool = (name, input) => ({ id: name, type: 'function', function: { name, arguments: JSON.stringify(input) } });
   const replies = [{ tool_calls: [tool('query_library', { instrumental: true })] },
     { tool_calls: [tool('propose_playlist', { name: '半小时纯音乐', durationMinutes: 30, tracks: Array.from({ length: 8 }, (_, i) => ({ ref: 'r' + (i + 1) })) })] }, { content: '已准备预览' }];
-  host.network.request = async () => { const message = replies.shift(); return { ok: true, body: JSON.stringify({ choices: [{ finish_reason: message.tool_calls ? 'tool_calls' : 'stop', message }] }) }; };
+  host.network.request = async () => { const message = replies.shift(); return modelResponse({ choices: [{ finish_reason: message.tool_calls ? 'tool_calls' : 'stop', message }] }); };
   const chat = mountChat(host); chat.connectResearch({ setExternalBusy() {}, getContext: () => null }); chat.setConfigured(true);
   document.getElementById('share-library').checked = true; document.getElementById('prompt').value = '来半小时纯音乐';
   document.getElementById('prompt').dispatchEvent(new window.Event('input'));

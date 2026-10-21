@@ -1,13 +1,25 @@
 import { mountChat } from './chat-panel.js';
 import { mountResearch } from './research-panel.js';
 import { mountKeySettings } from './key-panel.js';
+import { modelProviders } from './model-settings.mjs';
+import { MusicProfile } from './music-profile.mjs';
+import { mountPersonalization } from './personalization-panel.js';
 
-const chat = mountChat(echo);
-const research = mountResearch(echo, { onDraft: chat.preview, onBusy: chat.setExternalBusy, isBusy: chat.isBusy });
+const profile = new MusicProfile(echo);
+const chat = mountChat(echo, { profile });
+const research = mountResearch(echo, { onDraft: chat.preview, onBusy: chat.setExternalBusy, isBusy: chat.isBusy, onTrackSelected: chat.selectRecommendation });
 chat.connectResearch(research);
+const personal = mountPersonalization(echo, profile, chat);
+chat.connectPersonalization(personal);
 const keys = mountKeySettings(echo, {
-  onConfigured(value) { chat.setConfigured(value); research.setConfigured(value); },
+  onConfigured(value) { chat.setConfigured(value); research.setConfigured(value); personal.setConfigured(value); },
   onChanged() { chat.reset(); research.reset(); },
+  onProvider(profile) {
+    const label = modelProviders[profile.provider].label;
+    chat.setProvider(label); research.setProvider(profile.provider);
+    document.getElementById('library-share-label').textContent = '让 ' + label + ' 从曲库选曲';
+    document.getElementById('library-share-description').textContent = '开启后向 ' + label + ' 发送有界曲库概况及本次检索的曲名、艺术家、专辑、曲风、年份和时长。';
+  },
 });
 function theme(context) {
   document.documentElement.style.colorScheme = context.colorScheme;

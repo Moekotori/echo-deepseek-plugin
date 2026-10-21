@@ -1,3 +1,4 @@
+import { modelResponse } from './test-support.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { queryLibrary } from './src/library-query.mjs';
@@ -35,7 +36,7 @@ test('natural-language chat queries structured candidates, makes a duration-boun
     { tool_calls: [call('propose_playlist', { name: '半小时', durationMinutes: 30, tracks: Array.from({ length: 8 }, (_, i) => ({ ref: 'r' + (i + 1) })) })] }, { content: '已准备28分钟预览。' } ];
   const host = { storage: { isSecure: async () => true, get: async () => 'fixture' }, network: { cancel: async () => {}, request: async request => {
     posts.push(JSON.parse(request.body)); const message = replies.shift();
-    return { ok: true, body: JSON.stringify({ choices: [{ finish_reason: message.tool_calls ? 'tool_calls' : 'stop', message }] }) };
+    return modelResponse({ choices: [{ finish_reason: message.tool_calls ? 'tool_calls' : 'stop', message }] });
   } }, library: { searchTracks: async (input, query) => { queries.push(input); return { ...query, total: 8, hasMore: false, items: Array.from({ length: 8 }, (_, i) => ({ ...track, id: 'private-' + i })) }; },
     getTracks: async () => { reads++; throw new Error('unexpected scan'); } } };
   const result = await new DeepSeekChat(host).send('来半小时电子纯音乐，BPM至少100', { signal: signal(), shareLibrary: true });
@@ -51,7 +52,7 @@ test('natural-language chat queries structured candidates, makes a duration-boun
 test('structured tool cannot query before library sharing is enabled', async () => {
   let reads = 0;
   const host = { storage: { isSecure: async () => true, get: async () => 'fixture' },
-    network: { cancel: async () => {}, request: async () => ({ ok: true, body: JSON.stringify({ choices: [{ finish_reason: 'tool_calls', message: { tool_calls: [call('query_library', {})] } }] }) }) },
+    network: { cancel: async () => {}, request: async () => (modelResponse({ choices: [{ finish_reason: 'tool_calls', message: { tool_calls: [call('query_library', {})] } }] })) },
     library: { playlists: { previewRules: async () => { reads++; } } } };
   await assert.rejects(new DeepSeekChat(host).send('找曲', { signal: signal() }), /尚未允许/); assert.equal(reads, 0);
 });

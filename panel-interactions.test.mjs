@@ -1,3 +1,4 @@
+import { modelResponse } from './test-support.mjs';
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -33,7 +34,7 @@ function chatFixture() {
   chat.connectResearch({ setExternalBusy() {}, getContext: () => null }); chat.setConfigured(true);
   return { chat, requests, finish: value => finish(value) };
 }
-const reply = { ok: true, status: 200, body: JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: '答复' } }] }) };
+const reply = modelResponse({ choices: [{ finish_reason: 'stop', message: { content: '答复' } }] });
 
 test('blank drafts cannot send; IME confirmation and Shift+Enter do not submit; Enter returns focus for the next draft', async () => {
   const fixture = chatFixture();
@@ -92,7 +93,7 @@ test('research Enter uses the visible selected category and cannot submit twice 
   const host = { storage: { isSecure: async () => true, get: async key => key === 'api-key' ? 'fixture' : null, set: async () => {} },
     ui: { setPanelPresentation: async () => {} }, network: { cancel: async () => {}, request: options => {
       const body = JSON.parse(options.body);
-      if (options.url.endsWith('/search')) return Promise.resolve({ ok: true, body: JSON.stringify({ results: [{ title: 'Source', url: 'https://example.org/song', summary: 'Background' }] }) });
+      if (options.url.endsWith('/search')) return Promise.resolve(modelResponse({ results: [{ title: 'Source', url: 'https://example.org/song', summary: 'Background' }] }));
       queries.push(JSON.parse(body.messages.at(-1).content));
       return new Promise(resolve => { finish = resolve; });
     } } };
@@ -101,7 +102,7 @@ test('research Enter uses the visible selected category and cannot submit twice 
   type('research-subject', 'Song'); enter('research-subject', { isComposing: true }); assert.equal(busy, false);
   enter('research-subject'); await until(() => queries.length === 1);
   enter('research-subject'); assert.equal(queries.length, 1); assert.equal(byId('research-subject').readOnly, true);
-  const result = { ok: true, body: JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ summary: 'Summary', items: [], people: [], works: [] }) } }] }) };
+  const result = modelResponse({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ summary: 'Summary', items: [], people: [], works: [] }) } }] });
   finish(result); await until(() => !busy); assert.equal(queries[0].kind, 'track');
   document.querySelector('[data-research="relations"]').click(); await until(() => queries.length === 2);
   finish(result); await until(() => !busy);

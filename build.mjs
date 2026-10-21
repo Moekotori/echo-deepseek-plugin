@@ -12,10 +12,11 @@ const manifest = JSON.parse(await readFile(join(root, 'manifest.json'), 'utf8'))
 if (packageInfo.version !== manifest.version) throw new Error('package.json 与 manifest.json 版本不一致，请先同步');
 const staticFiles = JSON.parse(await readFile(join(root, 'package-files.json'), 'utf8'));
 const result = await build({ entryPoints: [join(root, 'src/plugin.js')], bundle: true, write: false,
-  format: 'iife', target: 'chrome120', legalComments: 'none' });
+  format: 'iife', target: 'chrome120', minify: true, legalComments: 'inline' });
 const panel = await build({ entryPoints: [join(root, 'src/panel.js')], bundle: true, write: false,
-  format: 'iife', target: 'chrome120', legalComments: 'none' });
+  format: 'iife', target: 'chrome120', minify: true, legalComments: 'inline' });
 const files = [{ path: 'plugin.js', content: result.outputFiles[0].text }, { path: 'panel.js', content: panel.outputFiles[0].text },
+  { path: 'THIRD_PARTY_NOTICES.txt', content: await readFile(join(root, 'THIRD_PARTY_NOTICES.txt'), 'utf8') },
   ...await Promise.all(staticFiles.map(async path =>
     ({ path, content: await readFile(join(root, 'src', path), 'utf8') })))];
 const bundle = JSON.stringify({ type: 'echo-plugin-package', version: 1,
@@ -23,12 +24,12 @@ const bundle = JSON.stringify({ type: 'echo-plugin-package', version: 1,
 const artwork = await readFile(join(root, 'src/assets/whale-chan.webp'));
 const resources = [
   { path: 'assets/whale-chan.webp', bytes: artwork },
-  ...await Promise.all([['LICENSE.txt', 'LICENSE'], ['THIRD_PARTY_NOTICES.md', 'THIRD_PARTY_NOTICES.md'], ['vendor-LICENSE.txt', 'vendor/LICENSE'], ['ASSETS.md', 'ASSETS.md']]
+  ...await Promise.all([['LICENSE.txt', 'LICENSE'], ['THIRD_PARTY_NOTICES.md', 'THIRD_PARTY_NOTICES.md'], ['THIRD_PARTY_NOTICES.txt', 'THIRD_PARTY_NOTICES.txt'], ['vendor-LICENSE.txt', 'vendor/LICENSE'], ['ASSETS.md', 'ASSETS.md']]
     .map(async ([path, input]) => ({ path, bytes: await readFile(join(root, input)) }))),
 ];
 const outer = JSON.stringify({ type: 'echo-workshop-item', schemaVersion: 1, id: manifest.id,
   title: manifest.name, version: manifest.version, content: { kind: 'plugin-package', entry: 'community.echo' },
-  compatibility: { minEchoVersion: manifest.minEchoVersion, pluginApiVersion: 2 }, networkHosts: ['api.deepseek.com'],
+  compatibility: { minEchoVersion: manifest.minEchoVersion, pluginApiVersion: 2 }, networkHosts: ['api.deepseek.com', 'api.openai.com', 'api.anthropic.com'],
   files: [{ path: 'community.echo', size: Buffer.byteLength(bundle), sha256: createHash('sha256').update(bundle).digest('hex') },
     ...resources.map(({ path, bytes }) => ({ path, size: bytes.byteLength, sha256: createHash('sha256').update(bytes).digest('hex') }))],
   license: { id: 'AGPL-3.0-only', holder: 'Moekotori' },

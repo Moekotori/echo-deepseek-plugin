@@ -19,8 +19,8 @@ const read = (root, path) => {
   return normalize(path, readFileSync(filename));
 };
 const managed = path => path.startsWith('src/') && !path.split('/').includes('..')
-  || /^[\w-]+\.test\.mjs$/u.test(path)
-  || ['key-panel.test.ts', 'ASSETS.md', 'preview.png', 'manifest.json', 'package-files.json', 'echo.workshop.project.json'].includes(path);
+  || /^[\w-]+\.test\.(?:mjs|ts)$/u.test(path)
+  || ['test-support.mjs', 'THIRD_PARTY_NOTICES.txt', 'ASSETS.md', 'preview.png', 'manifest.json', 'package-files.json', 'echo.workshop.project.json'].includes(path);
 
 /** Build the entire plan before writing; hashes protect edits made in the standalone repository. */
 export function planSync(source, target = repository) {
@@ -40,9 +40,9 @@ export function planSync(source, target = repository) {
   if (!desired.has('manifest.json') || !desired.has('src/plugin.js')) throw new Error('请指定 DeepSeek 插件源码目录');
   const manifest = JSON.parse(desired.get('manifest.json'));
   if (manifest.id !== 'echo.deepseek-details') throw new Error('插件标识不匹配');
-  if (desired.has('key-panel.test.ts')) {
-    desired.set('key-panel.test.ts', Buffer.from(desired.get('key-panel.test.ts').toString()
-      .replaceAll("resolve('workshop/deepseek-details/", "resolve('")));
+  for (const [path, bytes] of desired) {
+    if (!path.endsWith('.test.ts')) continue;
+    desired.set(path, Buffer.from(bytes.toString().replaceAll('workshop/deepseek-details/', '')));
   }
   for (const [path, bytes] of desired) {
     if (!binary(path) && /\b(?:sk-[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/u.test(bytes.toString())) {

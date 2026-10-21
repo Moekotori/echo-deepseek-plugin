@@ -1,3 +1,4 @@
+import { modelResponse } from './test-support.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DeepSeekChat } from './src/chat.mjs';
@@ -19,7 +20,7 @@ test('whole-library recommendations use aggregate context, page past 8 candidate
   const host = { storage: { isSecure: async () => true, get: async () => 'fixture' },
     network: { cancel: async () => {}, request: async request => {
       posts.push(JSON.parse(request.body)); const message = messages.shift();
-      return { ok: true, body: JSON.stringify({ choices: [{ finish_reason: message.tool_calls ? 'tool_calls' : 'stop', message }] }) };
+      return modelResponse({ choices: [{ finish_reason: message.tool_calls ? 'tool_calls' : 'stop', message }] });
     } }, library: {
       getSummary: async () => ({ trackCount: 1205, albumCount: 12, artistCount: 8, privatePath: '/private/db' }),
       getGenres: async () => ({ items: [{ id: 'private-genre', name: 'Electronic', trackCount: 1205 }], hasMore: false }),
@@ -47,7 +48,7 @@ test('overview and paged search do not access any library data before sharing is
   for (const name of ['get_library_overview', 'query_library', 'search_library']) {
     let reads = 0;
     const host = { storage: { isSecure: async () => true, get: async () => 'fixture' },
-      network: { cancel: async () => {}, request: async () => ({ ok: true, body: JSON.stringify({ choices: [{ finish_reason: 'tool_calls', message: { tool_calls: [tool(name, { search: '' })] } }] }) }) },
+      network: { cancel: async () => {}, request: async () => (modelResponse({ choices: [{ finish_reason: 'tool_calls', message: { tool_calls: [tool(name, { search: '' })] } }] })) },
       library: { getSummary: async () => { reads++; }, getTracks: async () => { reads++; }, searchTracks: async () => { reads++; } } };
     await assert.rejects(new DeepSeekChat(host).send('推荐', { ...options(), shareLibrary: false }), /尚未允许/);
     assert.equal(reads, 0);

@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { afterEach, expect, it, vi } from 'vitest';
 import { mountKeySettings } from './src/key-panel.js';
 import { postDeepSeek } from './src/api.mjs';
+import { modelResponse } from './test-support.mjs';
 
 const balanceBody = (amount = '12.3456', available = true) => JSON.stringify({ is_available: available,
   balance_infos: [{ currency: 'CNY', total_balance: amount }] });
@@ -59,14 +60,15 @@ it('refreshes numeric balance after API calls and immediately reports a revoked 
   const host = { storage: { isSecure: async () => true, get: async () => 'saved-fixture' },
     network: { request, cancel: async () => {} } };
   await mountKeySettings(host, { onConfigured, onChanged: vi.fn() }).load();
-  request.mockResolvedValueOnce({ ok: true, status: 200, body: '{}' })
+  request.mockResolvedValueOnce(modelResponse({ choices: [{ finish_reason: 'stop', message: { content: '完成' } }] }))
     .mockResolvedValueOnce({ ok: true, status: 200, body: balanceBody('0.00', false) });
-  await postDeepSeek(host, '/chat/completions', {}, 'saved-fixture', new AbortController().signal);
+  const completion = { model: 'deepseek-flash', max_tokens: 100, messages: [{ role: 'user', content: '音乐' }] };
+  await postDeepSeek(host, '/chat/completions', completion, 'saved-fixture', new AbortController().signal);
   await vi.waitFor(() => expect(document.getElementById('balance')!.textContent).toContain('0.00 CNY'));
   expect(document.getElementById('status')!.textContent).toContain('余额不足');
   request.mockResolvedValueOnce({ ok: false, status: 401, body: '{}' })
     .mockResolvedValueOnce({ ok: false, status: 401, body: '{}' });
-  await expect(postDeepSeek(host, '/chat/completions', {}, 'saved-fixture', new AbortController().signal)).rejects.toThrow('未通过认证');
+  await expect(postDeepSeek(host, '/chat/completions', completion, 'saved-fixture', new AbortController().signal)).rejects.toThrow('API Key 无效');
   await vi.waitFor(() => expect(document.getElementById('status')!.textContent).toContain('已失效，请重新配置'));
   expect(document.getElementById('balance')!.textContent).toBe('');
   expect((document.getElementById('key-settings') as HTMLDetailsElement).open).toBe(true);
