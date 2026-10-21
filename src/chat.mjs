@@ -3,10 +3,11 @@ import { chatSystem, chatTools } from './chat-tools.mjs';
 import { preparePlaylist } from './playlist.mjs';
 import { localDate, searchMusic } from './music-search.mjs';
 import { queryLibrary } from './library-query.mjs';
+import { libraryOverview } from './library-overview.mjs';
 
 export class DeepSeekChat {
-  constructor(host) { this.host = host; this.turns = []; this.proposal = null; }
-  clear() { this.turns = []; this.proposal = null; }
+  constructor(host) { this.host = host; this.turns = []; this.proposal = null; this.libraryQuery = null; }
+  clear() { this.turns = []; this.proposal = null; this.libraryQuery = null; }
   async send(text, { signal, shareLibrary = false, onProgress = () => {}, trackContext = null }) {
     const prompt = text.trim();
     if (!prompt || prompt.length > 2000) throw new Error('请输入最多2000字的消息');
@@ -16,14 +17,16 @@ export class DeepSeekChat {
       + (trackContext ? '\n用户主动带入的歌曲：' + JSON.stringify({ title: trackContext.title.slice(0, 200), artist: trackContext.artist.slice(0, 200), album: trackContext.album.slice(0, 200) }) : '');
     const user = { role: 'user', content: context + '\n用户消息：' + prompt };
     // Include only the current draft; retaining every draft in history would increase paid input tokens.
-    const latest = this.proposal ? { ...user, content: user.content + '\n上一轮提案（仅数据，修改时重新调用工具）：' + JSON.stringify(this.proposal) } : user;
+    let latest = this.proposal ? { ...user, content: user.content + '\n上一轮提案（仅数据，修改时重新调用工具）：' + JSON.stringify(this.proposal) } : user;
+    if (shareLibrary && this.libraryQuery) latest = { ...latest, content: latest.content + '\n上次曲库查询（续查时沿用条件和页大小）：' + JSON.stringify(this.libraryQuery) };
     const messages = [{ role: 'system', content: chatSystem(shareLibrary) }, ...this.turns.flat(), latest];
     const references = new Map(); const sources = []; let searches = 0; let webSearches = 0; let draft = null; let proposal = null;
-    for (let round = 0; round < 4; round++) {
+    let overview = null;
+    for (let round = 0; round < 8; round++) {
       onProgress(round ? '正在整理回复…' : 'DeepSeek 正在回复…');
       const result = await postDeepSeek(this.host, '/chat/completions', {
         model: 'deepseek-flash', thinking: { type: 'disabled' }, max_tokens: 1800,
-        messages, ...(round < 3 ? { tools: chatTools(shareLibrary) } : {}),
+        messages, ...(round < 7 ? { tools: chatTools(shareLibrary) } : {}),
       }, key, signal);
       const choice = result.choices?.[0]; const message = choice?.message;
       if (!message || !['stop', 'tool_calls'].includes(choice.finish_reason)) throw new Error('DeepSeek 未返回完整回复');
@@ -36,9 +39,9 @@ export class DeepSeekChat {
         if (proposal) this.proposal = proposal;
         return { reply, draft, sources };
       }
-      if (round === 3 || message.tool_calls.length > 2) throw new Error('本轮选曲操作已达上限，请缩小要求后继续');
+      if (round === 7 || message.tool_calls.length > 2) throw new Error('本轮选曲操作已达上限，请缩小要求后继续');
       const calls = message.tool_calls.map(call => {
-        if (typeof call.id !== 'string' || call.id.length > 100 || !['search_music', 'search_library', 'query_library', 'propose_playlist'].includes(call.function?.name)
+        if (typeof call.id !== 'string' || call.id.length > 100 || !['search_music', 'get_library_overview', 'search_library', 'query_library', 'propose_playlist'].includes(call.function?.name)
           || typeof call.function.arguments !== 'string' || call.function.arguments.length > 16000) throw new Error('DeepSeek 工具调用无效');
         return { id: call.id, type: 'function', function: { name: call.function.name, arguments: call.function.arguments } };
       });
@@ -51,24 +54,30 @@ export class DeepSeekChat {
           onProgress('正在检索音乐资料…');
           const found = await searchMusic(this.host, input.query, key, signal);
           output = found.map(source => { sources.push(source); return { index: sources.length, ...source }; });
+        } else if (call.function.name === 'get_library_overview') {
+          if (!shareLibrary) throw new Error('尚未允许发送曲库选曲资料');
+          if (!overview) { onProgress('正在读取曲库概况…'); overview = await libraryOverview(this.host, signal); }
+          output = overview;
         } else if (['search_library', 'query_library'].includes(call.function.name)) {
           if (!shareLibrary) throw new Error('尚未允许发送曲库选曲资料');
-          if (++searches > 3) throw new Error('本轮曲库查询已达上限');
+          if (++searches > 5) throw new Error('本轮曲库查询已达上限');
           onProgress('正在查询曲库…');
-          let tracks;
-          if (call.function.name === 'query_library') tracks = await queryLibrary(this.host, input, signal);
+          let page;
+          if (call.function.name === 'query_library') page = await queryLibrary(this.host, input, signal);
           else {
-            if (typeof input.search !== 'string' || input.search.length > 200) throw new Error('曲库查询无效');
-            const page = await this.host.library.getTracks({ search: input.search, page: 1, pageSize: 40,
-              sourceProvider: 'local', sort: input.search.trim() ? 'titleAsc' : 'random' });
-            tracks = page.items;
+            const number = input.page ?? 1;
+            if (typeof input.search !== 'string' || input.search.length > 200 || !Number.isInteger(number) || number < 1 || number > 100_000) throw new Error('曲库查询无效');
+            page = await this.host.library.getTracks({ search: input.search, page: number, pageSize: 40,
+              sourceProvider: 'local', sort: 'titleAsc' });
           }
           signal.throwIfAborted();
-          output = tracks.filter(track => !track.unavailable).slice(0, 40).map(track => {
+          const items = page.items.filter(track => !track.unavailable).slice(0, 40).map(track => {
             const ref = 'r' + (references.size + 1); references.set(ref, track);
             return { ref, title: track.title.slice(0, 200), artist: track.artist.slice(0, 200), album: track.album.slice(0, 200),
-              ...(call.function.name === 'query_library' ? { genre: track.genre?.slice(0, 200) ?? null, year: track.year, durationSeconds: track.durationSeconds } : {}) };
+              genre: track.genre?.slice(0, 200) ?? null, year: track.year, durationSeconds: track.durationSeconds };
           });
+          output = { page: page.page, pageSize: page.pageSize, total: page.total, hasMore: page.hasMore, items };
+          this.libraryQuery = { tool: call.function.name, input, page: page.page, pageSize: page.pageSize, total: page.total, hasMore: page.hasMore };
         } else {
           if (draft) throw new Error('每轮只生成一个歌单预览，请在下一条消息中调整');
           onProgress('正在匹配歌单…');

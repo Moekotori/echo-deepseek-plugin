@@ -45,7 +45,7 @@ test('opted-in library tools share only display metadata and resolve ephemeral r
     { content: '选曲已准备好。' },
   ]);
   const result = await client.send('从曲库选一首', { ...options(), shareLibrary: true });
-  assert.deepEqual(JSON.parse(posts[1].messages.at(-1).content), [{ ref: 'r1', title: track.title, artist: track.artist, album: track.album }]);
+  assert.deepEqual(JSON.parse(posts[1].messages.at(-1).content).items, [{ ref: 'r1', title: track.title, artist: track.artist, album: track.album, genre: null }]);
   assert.equal(JSON.stringify(posts).includes(track.id), false);
   assert.equal(JSON.stringify(posts).includes(track.path), false);
   assert.equal(result.draft.tracks.length, 1);

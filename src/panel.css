@@ -20,16 +20,10 @@ button:hover:enabled { background: var(--echo-host-panel); border-color: color-m
 button:disabled { opacity: .5; cursor: default; }
 button, summary { -webkit-tap-highlight-color: transparent; }
 .page-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; position: relative; flex-shrink: 0; padding-bottom: 12px; border-bottom: 1px solid var(--echo-host-border); }
-.key-controls { display: flex; justify-content: flex-end; align-items: center; gap: 6px 14px; flex-wrap: wrap; max-width: 65%; padding: 4px 12px 4px 4px; border: 1px solid var(--echo-host-border); border-radius: 12px; text-align: right; background: var(--echo-host-panel); }
-#balance { font-variant-numeric: tabular-nums; }
-#settings { text-align: left; }
 .identity { display: flex; align-items: center; gap: 10px; }
 .identity > img { width: 44px; height: 44px; object-fit: contain; border-radius: 14px; }
 h1 { font-size: 24px; color: var(--echo-host-heading); font-weight: 700; line-height: 1.3; margin: 0; letter-spacing: -.035em; }
 summary { cursor: pointer; color: var(--echo-host-muted); font-size: 12px; padding: 7px 12px; border-radius: 10px; background: var(--echo-host-panel); list-style-position: inside; }
-#key-settings > summary { background: transparent; color: var(--echo-host-text); }
-#settings { position: absolute; right: 0; top: 56px; width: min(360px, 100%); z-index: 2; display: grid; gap: 12px; padding: 20px; border: 1px solid var(--echo-host-border); border-radius: 16px; background: var(--echo-host-appBg); box-shadow: 0 14px 40px -14px color-mix(in srgb, var(--echo-host-text) 18%, transparent); }
-#settings label { font-weight: 600; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 #status, #balance, #research-status, #chat-status { color: var(--echo-host-muted); font-size: 12px; margin: 0; overflow-wrap: anywhere; }
 #research-tools { display: grid; gap: 10px; flex-shrink: 0; }
@@ -80,7 +74,6 @@ small, #playlist-count, #playlist-missing { color: var(--echo-host-muted); font-
   .research-subject button { padding: 8px; }
   [data-research] { padding: 6px 9px; }
   .research-actions { gap: 0; flex-wrap: wrap; }
-  .key-controls { max-width: 60%; gap: 2px 8px; border: 0; padding: 0; background: transparent; }
   .page-heading { padding-bottom: 14px; gap: 12px; }
   #transcript { padding: 6px 0 0; }
   .message { padding-left: 44px; padding-right: 0; }

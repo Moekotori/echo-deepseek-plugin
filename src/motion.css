@@ -3,21 +3,30 @@
   to { opacity: 1; transform: none; }
 }
 @keyframes reply-arrive {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(3px); }
   to { opacity: 1; transform: none; }
 }
-.page-heading { animation: panel-arrive .26s ease-out; }
-.message-body { animation: reply-arrive .22s ease-out; }
-#key-settings[open] #settings { animation: panel-arrive .16s ease-out; }
-.composer button { transition: background .16s, color .16s, transform .12s; }
-.composer button:active:enabled { transform: scale(.97); }
-#send-message span { transition: transform .16s ease-out; }
-#send-message:hover:enabled span { transform: translateY(-2px); }
-.share-option { transition: color .16s, background .16s; }
-.research-subject { transition: border-color .16s; }
+:root { --motion-settle: cubic-bezier(.22, .75, .25, 1); }
+.page-heading { animation: panel-arrive .28s var(--motion-settle); }
+.message-body { animation: reply-arrive .24s var(--motion-settle); }
+#key-settings[open] #settings { animation: panel-arrive .18s var(--motion-settle); }
+#key-settings > summary, #api-key, #settings button { transition: background .2s ease-out, color .2s ease-out, border-color .2s ease-out, box-shadow .22s ease-out; }
+.composer { animation: panel-arrive .32s var(--motion-settle); transition: border-color .22s ease-out, box-shadow .28s ease-out; }
+.composer button { transition: background .2s ease-out, border-color .2s ease-out, color .2s ease-out, box-shadow .22s ease-out, transform .18s var(--motion-settle); }
+.composer button:active:enabled { transform: scale(.98); transition-duration: .09s; }
+#send-message span { transition: transform .22s var(--motion-settle); }
+.composer #send-message:hover:enabled { transform: translateY(-1px); }
+.composer #send-message:active:enabled { transform: translateY(0) scale(.98); }
+#send-message:hover:enabled span { transform: translateY(-1px); }
+.share-option { transition: color .2s ease-out, background .2s ease-out; }
+.research-subject { transition: border-color .2s ease-out; }
+#chat-status:not(:empty) { animation: reply-arrive .18s var(--motion-settle); }
 :root[data-reduced-motion=true] *,
 :root[data-reduced-motion=true] *::before,
 :root[data-reduced-motion=true] *::after { animation: none !important; transition: none !important; }
+:root[data-reduced-motion=true] .composer button,
+:root[data-reduced-motion=true] #send-message span { transform: none !important; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+  .composer button, #send-message span { transform: none !important; }
 }

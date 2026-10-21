@@ -1,6 +1,6 @@
 {
   "name": "echo-deepseek-plugin",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "private": true,
   "type": "module",
   "description": "DeepSeek music information, research and playlist assistant for ECHO.",

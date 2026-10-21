@@ -50,7 +50,7 @@ test('current-song exploration displays local works, prepares a draft and can co
 
 test('composer submits natural language and shows a bounded-duration draft before any save action', async () => {
   const { host } = hostFixture(); const queries = []; let writes = 0;
-  host.library.playlists = { previewRules: async input => { queries.push(input); return { items: Array.from({ length: 8 }, (_, i) => ({ ...track, id: 'local-' + i })) }; } };
+  host.library.searchTracks = async (input, query) => { queries.push(input); return { ...query, total: 8, hasMore: false, items: Array.from({ length: 8 }, (_, i) => ({ ...track, id: 'local-' + i })) }; };
   host.library.createPlaylist = async () => { writes++; return { id: 'created' }; };
   const tool = (name, input) => ({ id: name, type: 'function', function: { name, arguments: JSON.stringify(input) } });
   const replies = [{ tool_calls: [tool('query_library', { instrumental: true })] },

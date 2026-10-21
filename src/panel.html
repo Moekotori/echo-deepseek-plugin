@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="zh-CN" data-reduced-motion="true">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>DeepSeek</title><link rel="stylesheet" href="panel.css"><link rel="stylesheet" href="research.css"><link rel="stylesheet" href="composer.css"><link rel="stylesheet" href="motion.css"></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>DeepSeek</title><link rel="stylesheet" href="panel.css"><link rel="stylesheet" href="key-settings.css"><link rel="stylesheet" href="research.css"><link rel="stylesheet" href="composer.css"><link rel="stylesheet" href="motion.css"></head>
 <body><main>
   <header class="page-heading"><div class="identity"><img src="assets/whale-chan.webp" width="52" height="52" alt=""><h1>DeepSeek</h1></div>
   <div class="key-controls"><details id="key-settings"><summary>API Key</summary><div id="settings">
     <label for="api-key">DeepSeek API Key</label><input id="api-key" type="password" autocomplete="off" spellcheck="false" maxlength="512" placeholder="sk-…">
-    <div class="actions"><button id="save" type="button">保存</button><button id="clear" type="button">清除</button></div>
-  </div></details><span id="status" role="status" aria-live="polite"></span><span id="balance" role="status" aria-live="polite"></span></div></header>
+    <div class="actions"><button id="clear" type="button">清除</button><button id="save" type="button">保存</button></div>
+  </div></details><div class="account-readout"><span id="status" role="status" aria-live="polite"></span><span id="balance" role="status" aria-live="polite"></span></div></div></header>
   <section id="research-tools" aria-label="音乐检索">
     <div class="research-subject"><input id="research-subject" maxlength="400" aria-label="检索对象" placeholder="艺人、歌曲或创作人员"><button id="use-current-track" type="button">使用当前歌曲</button></div>
     <small id="research-context"></small>
@@ -22,7 +22,7 @@
   </section>
   <div class="composer">
     <textarea id="prompt" maxlength="2000" rows="3" aria-label="消息" placeholder="聊聊音乐，或描述你想创建的歌单…"></textarea>
-    <div class="composer-footer"><div class="composer-library"><label class="share-option"><input id="share-library" type="checkbox">让 DeepSeek 从曲库选曲</label><small>开启后向 DeepSeek 发送查询匹配的曲名、艺术家、专辑、曲风、年份和时长。</small></div><div class="actions"><button id="clear-chat" type="button">清空对话</button><button id="stop-message" type="button" hidden>停止</button><button id="send-message" type="button">发送 <span aria-hidden="true">↑</span></button></div></div>
+    <div class="composer-footer"><div class="composer-library"><label class="share-option"><input id="share-library" type="checkbox">让 DeepSeek 从曲库选曲</label><small>开启后向 DeepSeek 发送有界曲库概况及本次检索的曲名、艺术家、专辑、曲风、年份和时长。</small></div><div class="actions"><button id="clear-chat" type="button">清空对话</button><button id="stop-message" type="button" hidden>停止</button><button id="send-message" type="button">发送 <span aria-hidden="true">↑</span></button></div></div>
     <p id="chat-status" role="status" aria-live="polite"></p>
   </div>
 </main><script src="__bridge__.js"></script><script src="panel.js"></script></body></html>
